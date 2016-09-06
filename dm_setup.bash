@@ -62,3 +62,8 @@ $GIT_CKOUTCMD
 sudo ansible-playbook -i "localhost," -c local devenv.yml --extra-vars="DEVENV_SSSD=true DEVENV_EEE=local DEVENV_CSS=true DEVENV_OPENXAL=false DEVENV_IPYTHON=false"
 
 popd
+
+
+sudo yum update
+
+sudo yum -y install emacs tree lightdm
