@@ -59,6 +59,6 @@ echo $GIT_CKOUTCMD
 
 $GIT_CKOUTCMD
 
-sudo ansible-playbook -i "localhost," -c local devenv.yml --extra-vars ="DEVENV_SSSD=false DEVENV_EEE=local DEVENV_CSS=true DEVENV_OPENXAL=false DEVENV_IPYTHON=false"
+sudo ansible-playbook -i "localhost," -c local devenv.yml --extra-vars="DEVENV_SSSD=true DEVENV_EEE=local DEVENV_CSS=true DEVENV_OPENXAL=false DEVENV_IPYTHON=false"
 
 popd
