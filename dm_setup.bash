@@ -67,3 +67,5 @@ popd
 sudo yum update
 
 sudo yum -y install emacs tree lightdm
+sudo systemctl disable gdm.service
+sudo systemctl enable lightdm.service
