@@ -17,7 +17,7 @@
 declare -gr SC_SCRIPT="$(realpath "$0")"
 declare -gr SC_SCRIPTNAME="$(basename "$SC_SCRIPT")"
 declare -gr SC_TOP="$(dirname "$SC_SCRIPT")"
-declare -gr SC_LOGDATE="$(date +%F-%H%M%S%Z)"
+declare -gr SC_LOGDATE="$(date +%Y%b%d-%H%M-%S%Z)"
 
 
 # Generic : Redefine pushd and popd to reduce their output messages
