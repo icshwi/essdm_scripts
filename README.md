@@ -7,7 +7,7 @@ ESS Physical Development Machine (DM) Setup Script
 * git. If not, one should download the essdm_scripts directly from the github
 
 ```
-curl -L https://raw.githubusercontent.com/downloads/jeonghanlee/essdm_scripts/dm_setup.bash -o dm_setup.bash
+curl -L https://raw.githubusercontent.com/jeonghanlee/essdm_scripts/master/dm_setup.bash -o dm_setup.bash
 chmod a+rx dm_setup.bash
 ```
 
