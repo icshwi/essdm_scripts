@@ -142,20 +142,6 @@ declare -gr ANSIBLE_VARS="DEVENV_SSSD=false DEVENV_EEE=local DEVENV_CSS=true DEV
 
 function yum_extra(){
 
-# lightdm-1.10.5-6.el7.x86_64.rp FAILED                                                                                      ]  0.0 B/s |    0 B  --:--:-- ETA 
-# https://artifactory01.esss.lu.se/artifactory/list/devenv/repositories/epel-x86_64/19012016/l/lightdm-1.10.5-6.el7.x86_64.rpm: [Errno -1] Package does not match intended download. Suggestion: run yum --enablerepo=epel-19012016 clean metadata
-# Trying other mirror.
-# lightdm-gtk-1.8.5-19.el7.x86_6 FAILED                                          
-# https://artifactory01.esss.lu.se/artifactory/list/devenv/repositories/epel-x86_64/19012016/l/lightdm-gtk-1.8.5-19.el7.x86_64.rpm: [Errno -1] Package does not match intended download. Suggestion: run yum --enablerepo=epel-19012016 clean metadata
-# Trying other mirror.
-# lightdm-gtk-common-1.8.5-19.el FAILED                                          
-# https://artifactory01.esss.lu.se/artifactory/list/devenv/repositories/epel-x86_64/19012016/l/lightdm-gtk-common-1.8.5-19.el7.noarch.rpm: [Errno -1] Package does not match intended download. Suggestion: run yum --enablerepo=epel-19012016 clean metadata
-# Trying other mirror.
-# lightdm-gobject-1.10.5-6.el7.x FAILED                                          
-# https://artifactory01.esss.lu.se/artifactory/list/devenv/repositories/epel-x86_64/19012016/l/lightdm-gobject-1.10.5-6.el7.x86_64.rpm: [Errno -1] Package does not match intended download. Suggestion: run yum --enablerepo=epel-19012016 clean metadata
-# Trying other mirror.
-
-
 #    declare extra_package_list="emacs tree screen"
 
     ${SUDO_CMD} yum -y install emacs tree screen
