@@ -165,7 +165,17 @@ function yum_extra(){
 
 }
 
+
+
 function preparation() {
+
+    declare yum_pid="/var/run/yum.pid"
+
+    if [[ -e ${yum_pid} ]]; then
+	${SUDO_CMD} kill -9 $(cat /var/run/yum.pid)
+    fi	
+
+    ${SUDO_CMD} yum -y remove PackageKit 
 
     # Necessary to clean up the existent CentOS repositories
     # 
@@ -186,6 +196,7 @@ function preparation() {
     ${SUDO_CMD} yum -y install git ansible
 }
 
+
 preparation
 
 
@@ -197,16 +208,16 @@ SC_GIT_SRC_DIR=${SC_TOP}/${SC_GIT_SRC_NAME}
 
 #
 #
-#git_clone
+git_clone
 #
 #
 pushd ${SC_GIT_SRC_DIR}
 #
 #
-#git_selection
+git_selection
 #
 #
-#${SUDO_CMD} ansible-playbook -i "localhost," -c local devenv.yml --extra-vars="${ANSIBLE_VARS}"
+${SUDO_CMD} ansible-playbook -i "localhost," -c local devenv.yml --extra-vars="${ANSIBLE_VARS}"
 #
 #
 popd
