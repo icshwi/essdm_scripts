@@ -39,7 +39,7 @@ declare -g SC_GIT_SRC_URL=""
 #
 function git_clone() {
 
-    SC_GIT_SRC_DIR=${SC_TOP}/${SC_GIT_SRC_NAME}
+  
     
     if [[ ! -d ${SC_GIT_SRC_DIR} ]]; then
 	echo "No git source repository in the expected location ${SC_GIT_SRC_DIR}"
@@ -142,57 +142,77 @@ declare -gr ANSIBLE_VARS="DEVENV_SSSD=false DEVENV_EEE=local DEVENV_CSS=true DEV
 
 function yum_extra(){
 
-    declare extra_package_list="lightdm emacs tree screen"
+# lightdm-1.10.5-6.el7.x86_64.rp FAILED                                                                                      ]  0.0 B/s |    0 B  --:--:-- ETA 
+# https://artifactory01.esss.lu.se/artifactory/list/devenv/repositories/epel-x86_64/19012016/l/lightdm-1.10.5-6.el7.x86_64.rpm: [Errno -1] Package does not match intended download. Suggestion: run yum --enablerepo=epel-19012016 clean metadata
+# Trying other mirror.
+# lightdm-gtk-1.8.5-19.el7.x86_6 FAILED                                          
+# https://artifactory01.esss.lu.se/artifactory/list/devenv/repositories/epel-x86_64/19012016/l/lightdm-gtk-1.8.5-19.el7.x86_64.rpm: [Errno -1] Package does not match intended download. Suggestion: run yum --enablerepo=epel-19012016 clean metadata
+# Trying other mirror.
+# lightdm-gtk-common-1.8.5-19.el FAILED                                          
+# https://artifactory01.esss.lu.se/artifactory/list/devenv/repositories/epel-x86_64/19012016/l/lightdm-gtk-common-1.8.5-19.el7.noarch.rpm: [Errno -1] Package does not match intended download. Suggestion: run yum --enablerepo=epel-19012016 clean metadata
+# Trying other mirror.
+# lightdm-gobject-1.10.5-6.el7.x FAILED                                          
+# https://artifactory01.esss.lu.se/artifactory/list/devenv/repositories/epel-x86_64/19012016/l/lightdm-gobject-1.10.5-6.el7.x86_64.rpm: [Errno -1] Package does not match intended download. Suggestion: run yum --enablerepo=epel-19012016 clean metadata
+# Trying other mirror.
 
-    ${SUDO_CMD} yum -y install ${extra_package_list}
-    ${SUDO_CMD} systemctl disable gdm.service
-    ${SUDO_CMD} systemctl enable lightdm.service
+
+#    declare extra_package_list="emacs tree screen"
+
+    ${SUDO_CMD} yum -y install emacs tree screen
+#    ${SUDO_CMD} systemctl disable gdm.service
+#    ${SUDO_CMD} systemctl enable lightdm.service
     ${SUDO_CMD} yum -y update
 
 }
 
+function preparation() {
 
-# Necessary to clean up the existent CentOS repositories
-# 
-${SUDO_CMD} rm -rf ${YUM_REPO_DIR}/*  
-${SUDO_CMD} rm -rf ${RPMGPGKEY_DIR}/${RPMGPGKEY_EPEL}
+    # Necessary to clean up the existent CentOS repositories
+    # 
+    ${SUDO_CMD} rm -rf ${YUM_REPO_DIR}/*  
+    ${SUDO_CMD} rm -rf ${RPMGPGKEY_DIR}/${RPMGPGKEY_EPEL}
+    
+    # Download the ESS customized repository files and its RPM GPG KEY file
+    #
+    ${SUDO_CMD} curl -o ${YUM_REPO_DIR}/${REPO_CENTOS}     ${ESS_REPO_URL}/CentOS-Vault-7.1.1503.repo \
+        -o ${YUM_REPO_DIR}/${REPO_EPEL}       ${ESS_REPO_URL}/${REPO_EPEL} \
+        -o ${RPMGPGKEY_DIR}/${RPMGPGKEY_EPEL} ${ESS_REPO_URL}/${RPMGPGKEY_EPEL}
+    
+    
+    # Install git and ansible for further steps
+    #
+    # -y Assume yes, doesn't work :)
+    # 
+    ${SUDO_CMD} yum -y install git ansible
+}
 
-# Download the ESS customized repository files and its RPM GPG KEY file
-#
-${SUDO_CMD} curl -o ${YUM_REPO_DIR}/${REPO_CENTOS}     ${ESS_REPO_URL}/CentOS-Vault-7.1.1503.repo \
-                 -o ${YUM_REPO_DIR}/${REPO_EPEL}       ${ESS_REPO_URL}/${REPO_EPEL} \
-                 -o ${RPMGPGKEY_DIR}/${RPMGPGKEY_EPEL} ${ESS_REPO_URL}/${RPMGPGKEY_EPEL}
-
-
-# Install git and ansible for further steps
-#
-# -y Assume yes, doesn't work :)
-# 
-${SUDO_CMD} yum -y install git ansible
+preparation
 
 
 #
 #
 SC_GIT_SRC_NAME="ics-ans-devenv"
 SC_GIT_SRC_URL="https://bitbucket.org/europeanspallationsource"
+SC_GIT_SRC_DIR=${SC_TOP}/${SC_GIT_SRC_NAME}
 
 #
 #
-git_clone
-
+#git_clone
 #
 #
 pushd ${SC_GIT_SRC_DIR}
-
 #
 #
-git_selection
-
-${SUDO_CMD} ansible-playbook -i "localhost," -c local devenv.yml --extra-vars="${ANSIBLE_VARS}"
-
+#git_selection
+#
+#
+#${SUDO_CMD} ansible-playbook -i "localhost," -c local devenv.yml --extra-vars="${ANSIBLE_VARS}"
+#
+#
 popd
-
+#
+#
 yum_extra
-
+#
 exit
 
