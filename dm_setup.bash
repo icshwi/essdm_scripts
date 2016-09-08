@@ -25,6 +25,12 @@ declare -gr SC_LOGDATE="$(date +%Y%b%d-%H%M-%S%Z)"
 function pushd() { builtin pushd "$@" > /dev/null; }
 function popd()  { builtin popd  "$@" > /dev/null; }
 
+function checkstr() {
+    if [ -z "$1" ]; then
+	echo "$1 is not defined"
+	exit 1;
+    fi
+}
 
 # Generic : Global variables for git_clone, git_selection, and others
 # 
@@ -36,10 +42,17 @@ declare -g SC_GIT_SRC_URL=""
 
 # Generic : git_clone
 #
-#
+# Required Global Variable
+# - SC_GIT_SRC_DIR  : Input
+# - SC_LOGDATE      : Input
+# - SC_GIT_SRC_URL  : Input
+# - SC_GIT_SRC_NAME : Input
+# 
 function git_clone() {
 
-  
+    checkstr ${SC_LOGDATE}
+    checkstr ${SC_GIT_SRC_URL}
+    checkstr ${SC_GIT_SRC_NAME}
     
     if [[ ! -d ${SC_GIT_SRC_DIR} ]]; then
 	echo "No git source repository in the expected location ${SC_GIT_SRC_DIR}"
@@ -57,7 +70,9 @@ function git_clone() {
 }
 
 # Generic : git_selection
-# - requirement : Global vairable : SC_SELECTED_GIT_SRC 
+#
+# Require Global vairable
+# - SC_SELECTED_GIT_SRC  : Output
 #
 function git_selection() {
 
@@ -123,7 +138,6 @@ function git_selection() {
 	git_ckoutcmd="git checkout ${SC_SELECTED_GIT_SRC}"
 	$git_ckoutcmd
     fi
-
 }
 
 
@@ -131,60 +145,69 @@ function git_selection() {
 # Specific only for this script : Global vairables - readonly
 #
 declare -gr SUDO_CMD="sudo"
-declare -gr YUM_REPO_DIR="/etc/yum.repos.d"
-declare -gr RPMGPGKEY_DIR="/etc/pki/rpm-gpg/"
-declare -gr REPO_CENTOS="CentOS-Base.repo"
-declare -gr REPO_EPEL="epel-19012016.repo"
-declare -gr RPMGPGKEY_EPEL="RPM-GPG-KEY-EPEL-7"
-declare -gr ESS_REPO_URL="https://artifactory01.esss.lu.se/artifactory/list/devenv/repositories/repofiles"
 declare -gr ANSIBLE_VARS="DEVENV_SSSD=false DEVENV_EEE=local DEVENV_CSS=true DEVENV_OPENXAL=false DEVENV_IPYTHON=false"
 
 
-function yum_extra(){
-
-#    declare extra_package_list="emacs tree screen"
-
-    ${SUDO_CMD} yum -y install emacs tree screen
-#    ${SUDO_CMD} systemctl disable gdm.service
-#    ${SUDO_CMD} systemctl enable lightdm.service
-    ${SUDO_CMD} yum -y update
-
-}
-
-
+# Specific : preparation
+#
+# Require Global vairable
+# - SUDO_CMD :  input
+# - 
 
 function preparation() {
 
-    declare yum_pid="/var/run/yum.pid"
+    checkstr ${SUDO_CMD}
+    
+    declare -r yum_pid="/var/run/yum.pid"
 
+    declare -r yum_repo_dir="/etc/yum.repos.d"
+    declare -r rpmgpgkey_dir="/etc/pki/rpm-gpg/"
+    declare -r repo_centos="CentOS-Base.repo"
+    declare -r repo_epel="epel-19012016.repo"
+    declare -r rpmgpgkey_epel="RPM-GPG-KEY-EPEL-7"
+    declare -r ess_repo_url="https://artifactory01.esss.lu.se/artifactory/list/devenv/repositories/repofiles"
+
+    # Somehow, yum is running due to PackageKit, so if so, kill it
+    #
     if [[ -e ${yum_pid} ]]; then
-	${SUDO_CMD} kill -9 $(cat /var/run/yum.pid)
+	${SUDO_CMD} kill -9 $(cat ${yum_pid})
     fi	
-
+    
+    # Remove PackageKit
+    #
     ${SUDO_CMD} yum -y remove PackageKit 
 
     # Necessary to clean up the existent CentOS repositories
     # 
-    ${SUDO_CMD} rm -rf ${YUM_REPO_DIR}/*  
-    ${SUDO_CMD} rm -rf ${RPMGPGKEY_DIR}/${RPMGPGKEY_EPEL}
+    ${SUDO_CMD} rm -rf ${yum_repo_dir}/*  
+    ${SUDO_CMD} rm -rf ${rpmgpgkey_dir}/${rpmgpgkey_epel}
     
     # Download the ESS customized repository files and its RPM GPG KEY file
     #
-    ${SUDO_CMD} curl -o ${YUM_REPO_DIR}/${REPO_CENTOS}     ${ESS_REPO_URL}/CentOS-Vault-7.1.1503.repo \
-        -o ${YUM_REPO_DIR}/${REPO_EPEL}       ${ESS_REPO_URL}/${REPO_EPEL} \
-        -o ${RPMGPGKEY_DIR}/${RPMGPGKEY_EPEL} ${ESS_REPO_URL}/${RPMGPGKEY_EPEL}
-    
-    
-    # Install git and ansible for further steps
-    #
-    # -y Assume yes, doesn't work :)
+    ${SUDO_CMD} curl -o ${yum_repo_dir}/${repo_centos}     ${ess_repo_url}/CentOS-Vault-7.1.1503.repo \
+		     -o ${yum_repo_dir}/${repo_epel}       ${ess_repo_url}/${repo_epel} \
+		     -o ${rpmgpgkey_dir}/${rpmgpgkey_epel} ${ess_repo_url}/${rpmgpgkey_epel}
+        
+    # Install "git and ansible" for real works
     # 
     ${SUDO_CMD} yum -y install git ansible
 }
 
 
-preparation
+function yum_extra(){
+    
+    checkstr ${SUDO_CMD}
+    #    declare extra_package_list="emacs tree screen lightdm"
 
+    ${SUDO_CMD} yum -y install emacs tree screen
+    #    ${SUDO_CMD} systemctl disable gdm.service
+    #    ${SUDO_CMD} systemctl enable lightdm.service
+    ${SUDO_CMD} yum -y update
+
+}
+
+
+preparation
 
 #
 #
