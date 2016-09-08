@@ -142,27 +142,26 @@ declare -gr ANSIBLE_VARS="DEVENV_SSSD=false DEVENV_EEE=local DEVENV_CSS=true DEV
 
 function yum_extra(){
 
-    declare extra_package_list="emacs tree screen"
+    declare extra_package_list="lightdm emacs tree screen"
 
-    ${SUDO_CMD} yum update
-    ${SUDO_CMD} yum -y install lightdm
+    ${SUDO_CMD} yum -y install ${extra_package_list}
     ${SUDO_CMD} systemctl disable gdm.service
     ${SUDO_CMD} systemctl enable lightdm.service
-    ${SUDO_CMD} yum -y install ${extra_package_list}
-
+    ${SUDO_CMD} yum -y update
 
 }
 
 
 # Necessary to clean up the existent CentOS repositories
 # 
-${SUDO_CMD} rm -rf ${YUM_REPO_DIR}/*
+${SUDO_CMD} rm -rf ${YUM_REPO_DIR}/*  
+${SUDO_CMD} rm -rf ${RPMGPGKEY_DIR}/${RPMGPGKEY_EPEL}
 
 # Download the ESS customized repository files and its RPM GPG KEY file
 #
-${SUDO_CMD} curl -o ${YUM_REPO_DIR}/${REPO_CENTOS}     ${ESS_REPO_URL}/CentOS-Vault-7.1.1503.repo
-${SUDO_CMD} curl -o ${YUM_REPO_DIR}/${REPO_EPEL}       ${ESS_REPO_URL}/${REPO_EPEL}
-${SUDO_CMD} curl -o ${RPMGPGKEY_DIR}/${RPMGPGKEY_EPEL} ${ESS_REPO_URL}/${RPMGPGKEY_EPEL}
+${SUDO_CMD} curl -o ${YUM_REPO_DIR}/${REPO_CENTOS}     ${ESS_REPO_URL}/CentOS-Vault-7.1.1503.repo \
+                 -o ${YUM_REPO_DIR}/${REPO_EPEL}       ${ESS_REPO_URL}/${REPO_EPEL} \
+                 -o ${RPMGPGKEY_DIR}/${RPMGPGKEY_EPEL} ${ESS_REPO_URL}/${RPMGPGKEY_EPEL}
 
 
 # Install git and ansible for further steps
