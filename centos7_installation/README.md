@@ -34,17 +34,40 @@ curl -L https://git.io/vi8DA -o dm_setup.bash
 ![Connection Example](11.png)
 
 
+## Run the script
+```
+bash em_setup.script
+```
 ![Connection Example](12.png)
+
+## sudo permission
+* Type the user password here.
 
 ![Connection Example](13.png)
 
+## Installation is started
 ![Connection Example](14.png)
+
+## Select the release version 
+* Please see the following site for more information.
+https://ess-ics.atlassian.net/wiki/x/MoL-Ag
 
 ![Connection Example](15.png)
 
 ![Connection Example](16.png)
 
+## Run the SoftIOC via iocsh
+* Open another terminal
+* type iocsh
+```
+iocsh
+```
 ![Connection Example](17.png)
+
+## Run CS-Studio 
+```
+css
+```
 
 ![Connection Example](18.png)
 
@@ -53,4 +76,5 @@ curl -L https://git.io/vi8DA -o dm_setup.bash
 
 ## Error 
 * the following error was solved from 2.2.5
+
 ![Connection Example](20.png)
