@@ -22,7 +22,17 @@
 
 ![Connection Example](10.png)
 
+# Development Machine Setup Procedure
+* Version : 2.2.4
+* Selected Option (TRUE) : EEE Local installation / CS-Studio 
+* Unselected Option (FALSE) : ESS Active Directory service / OpenXAL / IPython 
+
+## Download the script 
+```
+curl -L https://git.io/vi8DA -o dm_setup.bash
+```
 ![Connection Example](11.png)
+
 
 ![Connection Example](12.png)
 
@@ -40,4 +50,7 @@
 
 ![Connection Example](19.png)
 
+
+## Error 
+* the following error was solved from 2.2.5
 ![Connection Example](20.png)
