@@ -1,4 +1,4 @@
-# CentOS 7.1 1503 Installation Procedure (Example, VirtualBox)
+# CentOS 7.1 1503 Installation Procedure
 
 ![Connection Example](0.png)
 
