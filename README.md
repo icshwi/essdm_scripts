@@ -32,4 +32,4 @@ bash dm_setup.bash
 https://ess-ics.atlassian.net/wiki/display/DE/ESS+physical+DM+setup
 
 # Installation Example
-Please see the README.md file in ./centos7_installation directory.
+Please see the [README.md in centos7_installation directory](./centos7_installation/README.md).
