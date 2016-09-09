@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 #  Copyright (c) 2016 Jeong Han Lee
-#  Copyright (c) 2016 European Spallation Source
+#  Copyright (c) 2016 European Spallation Source ERIC
 #
 #  The dm_setup.bash is free software: you can redistribute
 #  it and/or modify it under the terms of the GNU General Public License
@@ -224,13 +224,15 @@ function preparation() {
     # 
     ${SUDO_CMD} yum -y install git ansible
 
-    end_func ${FUNCNAME}
+    end_func ${func_name}
 }
 
 
 function yum_extra(){
     
-    init_func ${FUNCNAME}
+    local func_name=${FUNCNAME[*]}
+
+    ini_func ${func_name}
 	
     checkstr ${SUDO_CMD}
     #    declare extra_package_list="emacs tree screen lightdm"
@@ -264,7 +266,7 @@ SC_GIT_SRC_DIR=${SC_TOP}/${SC_GIT_SRC_NAME}
 
 #
 #
-#git_clone
+git_clone
 #
 #
 pushd ${SC_GIT_SRC_DIR}
@@ -273,7 +275,9 @@ pushd ${SC_GIT_SRC_DIR}
 git_selection
 #
 #
+ini_func "Ansible Playbook"
 ${SUDO_CMD} ansible-playbook -i "localhost," -c local devenv.yml --extra-vars="${ANSIBLE_VARS}"
+end_func "Ansible Playbook"
 #
 #
 popd
@@ -281,5 +285,5 @@ popd
 #
 yum_extra
 #
-#exit
+exit
 
