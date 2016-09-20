@@ -16,7 +16,7 @@ ESS Physical Development Machine (DM) Setup Script
 
 * Short, but it has no meaning
 ```
-curl -L https://git.io/vi8DA -o dm_setup.bash
+curl -L https://goo.gl/ZFCFf1 -o dm_setup.bash
 ```
 * Long, but it is self-evidence
 ```
