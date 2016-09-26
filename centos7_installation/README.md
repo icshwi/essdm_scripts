@@ -75,7 +75,6 @@ css
 
 
 ## Error 
-* the following error was solved from 2.2.5
-A race condition error solved for local EEE machines, where requireExecCompletions is referenced in playbooks before it has been synced.
+A race condition error solved from 2.2.5 for local EEE machines, where requireExecCompletions is referenced in playbooks before it has been synced.
 
 ![Connection Example](20.png)
