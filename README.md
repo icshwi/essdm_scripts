@@ -8,9 +8,17 @@ ESS Physical Development Machine (DM) Setup Script
 * This script should provide an additional installation of several packages
 
 # Requirements
-* an user should have the sudo permission
-* Fresh installation of CentOS 7.1 1503 (Server with UI or Gnome Desktop). It is highly recommended to run the script without doing "yum" activities. The script will swipe original CentOS repositories completely, and put the ESS customized repositories instead. 
-* curl - already installed in the CentOS
+## CentOS Installation
+* Set Installation Source as *Local media* and Software Selection as *Minimal installation* 
+* Create iocuser and set the administrator permission
+* *Do not "yum" before executing the dm_setup script*. DM should use the ESS rpm repositories, not any other CentOS ones. The dm_script will remove original CentOS repositories completely, and put the ESS customized repositories.  
+
+
+# DM Setup
+
+## Login the CentOS as iocuser
+
+## Open an Terminal
 
 ## Download the script
 
@@ -23,11 +31,12 @@ curl -L https://goo.gl/ZFCFf1 -o dm_setup.bash
 curl -L https://raw.githubusercontent.com/jeonghanlee/essdm_scripts/master/dm_setup.bash -o dm_setup.bash
 ```
 
-# Execute the script
+## Execute the script
 
 ```
 bash dm_setup.bash 
 ```
+
 # Reference 
 https://ess-ics.atlassian.net/wiki/display/DE/ESS+physical+DM+setup
 
