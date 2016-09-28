@@ -9,9 +9,9 @@ ESS Physical Development Machine (DM) Setup Script
 
 # Requirements
 ## CentOS Installation
-* Set Installation Source as *Local media* and Software Selection as *Minimal installation* 
+* Set Installation Source as **Local media** 
 * Create iocuser and set the administrator permission
-* *Do not "yum" before executing the dm_setup script*. DM should use the ESS rpm repositories, not any other CentOS ones. The dm_script will remove original CentOS repositories completely, and put the ESS customized repositories.  
+* **Do not "yum" before executing the dm_setup script**.  DM **should** use the ESS RPM repositories, not any other CentOS ones. The script will remove original CentOS repositories completely, and put the ESS customized repositories.  
 
 
 # DM Setup
