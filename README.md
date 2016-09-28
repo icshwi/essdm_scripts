@@ -1,26 +1,26 @@
-# essdm_scripts
+essdm_scripts
+======
 ESS Physical Development Machine (DM) Setup Script
 
-# Goal
+## Goal
 * This script should be used for the ESS Physical DM setup for CentOS 7.1 1503.
 * This script should provide an easy solution to setup the DM quickly
 * This script should focus *ONLY* two options (EEE Local installation and CS-Studio installation) 
 * This script should provide an additional installation of several packages
 
-# Requirements
-## CentOS Installation
+## Things one should do carefully
 * Set Installation Source as **Local media** 
 * Create iocuser and set the administrator permission
 * **Do not "yum" before executing the dm_setup script**.  DM **should** use the ESS RPM repositories, not any other CentOS ones. The script will remove original CentOS repositories completely, and put the ESS customized repositories.  
 
 
-# DM Setup
+## DM Setup
 
-## Login the CentOS as iocuser
+### Login the CentOS as iocuser
 
-## Open an Terminal
+### Open an Terminal
 
-## Download the script
+### Download the script
 
 * Short, but it has no meaning
 ```
@@ -31,14 +31,14 @@ curl -L https://goo.gl/ZFCFf1 -o dm_setup.bash
 curl -L https://raw.githubusercontent.com/jeonghanlee/essdm_scripts/master/dm_setup.bash -o dm_setup.bash
 ```
 
-## Execute the script
+### Execute the script
 
 ```
 bash dm_setup.bash 
 ```
 
-# Reference 
+## Reference 
 https://ess-ics.atlassian.net/wiki/display/DE/ESS+physical+DM+setup
 
-# Installation Example
+## Installation Example
 Please see the [README.md in centos7_installation directory](./centos7_installation/README.md).
