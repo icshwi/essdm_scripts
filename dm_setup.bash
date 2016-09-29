@@ -288,7 +288,7 @@ function update_eeelocal_parameters() {
    
     local rsync_server="rsync://owncloud01.esss.lu.se:80";
   
-    local rsync_general_option="--recursive --links --perms --times --timeout 120 --exclude='.git SL6-x86_64' ";
+    local rsync_general_option="--recursive --links --perms --times --timeout 120 --exclude='.git/ SL6-x86_64/' ";
 
     local rsync_epics_option="${rsync_general_option} --log-file=${rsync_epics_log} ";
     local rsync_startup_option="${rsync_general_option} --log-file=${rsync_startup_log} ";
