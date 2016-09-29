@@ -34,7 +34,7 @@ declare -gr SC_SCRIPT="$(realpath "$0")"
 declare -gr SC_SCRIPTNAME="$(basename "$SC_SCRIPT")"
 declare -gr SC_TOP="$(dirname "$SC_SCRIPT")"
 declare -gr SC_LOGDATE="$(date +%Y%b%d-%H%M-%S%Z)"
-
+declare -gr SC_IOCUSER="$(whoami)"
 
 # Generic : Redefine pushd and popd to reduce their output messages
 # 
@@ -227,6 +227,24 @@ function preparation() {
     end_func ${func_name}
 }
 
+function yum_gui(){
+
+    local func_name=${FUNCNAME[*]}
+
+    ini_func ${func_name}
+	
+    checkstr ${SUDO_CMD}
+
+
+    ${SUDO_CMD} yum -y groupinstall "Gnome Desktop"
+    ${SUDO_CMD} yum -y install lightdm
+    #systemctl set-default graphical.target
+
+    ${SUDO_CMD} systemctl disable gdm.service
+    ${SUDO_CMD} systemctl enable lightdm.service
+ 
+    end_func ${func_name}  
+}
 
 function yum_extra(){
     
@@ -246,17 +264,67 @@ function yum_extra(){
 }
 
 
-${SUDO_CMD} -v
+function update_eeelocal_parameters() {
 
-while [ true ];
-do
-    ${SUDO_CMD} -n /bin/true;
-    sleep 60;
-    kill -0 "$$" || exit;
-done 2>/dev/null &
+    local func_name=${FUNCNAME[*]}
+
+    ini_func ${func_name}
+    
+    checkstr ${SC_GIT_SRC_DIR}; checkstr ${SC_IOCUSER};
+
+    
+    local target_dir=${SC_GIT_SRC_DIR}/roles/EEElocal
+
+    # Replace the default user (ess) with the user who executes this script (whoami)
+    printf "... Replace the default user (ess) with %s in %s\n\n" "${SC_IOCUSER}" "${target_dir}/tasks/main.yml";
+    
+    sed -i~ 's/=ess/=${SC_IOCUSER}/g' ${target_dir}/tasks/main.yml
+
+    # Replace the default user, and add log files for rsync-epics.service and rsync-startup.service
+
+    printf "... Replace the default user (ess) with \"%s\" in %s \n\n... Add logfiles in %s\n" \
+	   "${SC_IOCUSER}" "${target_dir}/files/rsync-{epics,startup}.service" \
+	   "/tmp/rsync-{epics,startup}.log";
+    cat > ${target_dir}/files/rsync-epics.service <<EOF
+[Unit]
+Description=Script that syncs epics folder from the EEE server, hacked by dm_setup.bash
+
+[Service]
+ExecStart=/usr/bin/bash -c "rsync --recursive --links --perms --times --timeout 120 --log-file=/tmp/rsync-epics.log rsync://owncloud01.esss.lu.se:80/epics /opt/epics --chmod=Dugo=rwx,Fuog=rwx"
+User=${SC_IOCUSER}
+
+[Install]
+WantedBy=multi-user.target
+
+EOF
+    
+    cat > ${target_dir}/files/rsync-startup.service <<EOF
+[Unit]
+Description=Script that syncs startup folder from the EEE server
+
+[Service]
+ExecStart=/usr/bin/bash -c "rsync --recursive --links --perms --times --timeout 120 --log-file=/tmp/rsync-startup.log rsync://owncloud01.esss.lu.se:80/startup /opt/startup --chmod=Dugo=rwx,Fuog=rwx"
+User=${SC_IOCUSER}
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    end_func ${func_name};  
+    
+}
+
+# ${SUDO_CMD} -v
+
+# while [ true ];
+# do
+#     ${SUDO_CMD} -n /bin/true;
+#     sleep 60;
+#     kill -0 "$$" || exit;
+# done 2>/dev/null &
 
 
-preparation
+# preparation
 
 #
 #
@@ -273,8 +341,9 @@ pushd ${SC_GIT_SRC_DIR}
 #
 #
 git_selection
-#
-#
+update_eeelocal_parameters
+
+
 ini_func "Ansible Playbook"
 ${SUDO_CMD} ansible-playbook -i "localhost," -c local devenv.yml --extra-vars="${ANSIBLE_VARS}"
 end_func "Ansible Playbook"
@@ -283,7 +352,8 @@ end_func "Ansible Playbook"
 popd
 #
 #
-yum_extra
+#yum_gui
+#yum_extra
 #
 exit
 
