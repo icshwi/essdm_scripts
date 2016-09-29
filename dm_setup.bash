@@ -354,6 +354,7 @@ EOF
 }
 
 
+
 ${SUDO_CMD} -v
 
 while [ true ];
@@ -362,6 +363,7 @@ do
     sleep 60;
     kill -0 "$$" || exit;
 done 2>/dev/null &
+
 
 
 preparation
@@ -387,7 +389,9 @@ update_eeelocal_parameters
 # Postpone to add the functionalty after introducing to check the UI installation status
 #
 
-# nice xterm -title "EEE rsync status" -geometry 180x20+0+0 -e "watch -n 2 tail -n 10 -f ${rsync_epics_log}"&
+if [[ ${1} = "gui" ]]; then
+    nice xterm -title "EEE rsync status" -geometry 140x12+0+0 -e "nice watch -n 2 tail -n 10 ${rsync_epics_log}"&
+fi
      
 
 ini_func "Ansible Playbook"
