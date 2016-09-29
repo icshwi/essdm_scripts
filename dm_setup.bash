@@ -20,7 +20,7 @@
 # Author : Jeong Han Lee
 # email  : han.lee@esss.se
 # Date   : 
-# version : 0.9.0 
+# version : 0.9.1 
 #
 # http://www.gnu.org/software/bash/manual/bashref.html#Bash-Builtins
 
@@ -260,7 +260,7 @@ function yum_extra(){
 
     # Now it is safe to run update by an user, let them do this job.
     
-    #    ${SUDO_CMD} yum -y update
+    ${SUDO_CMD} yum -y update
  
     end_func ${func_name}
 }
