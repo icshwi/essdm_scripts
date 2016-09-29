@@ -319,9 +319,8 @@ User=${SC_IOCUSER}
 WantedBy=multi-user.target
 EOF
 
-
-    xterm -e -hold -display "Rsync monitor" tail -f ${rsync_epics_log}
-    
+    xterm -e -title "EEE rsync status" -e "tail -n 10 -f ${rsync_epics_log}"&
+     
     end_func ${func_name};  
     
 }
