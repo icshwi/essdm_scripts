@@ -24,21 +24,26 @@ ESS Physical Development Machine (DM) Setup Script
 
 * Short, but it has no meaning
 ```
-curl -L https://goo.gl/ZFCFf1 -o dm_setup.bash
+$ curl -L https://git.io/vi8DA -o dm_setup.bash
 ```
 * Long, but it is self-evidence
 ```
-curl -L https://raw.githubusercontent.com/jeonghanlee/essdm_scripts/master/dm_setup.bash -o dm_setup.bash
+$ curl -L https://raw.githubusercontent.com/jeonghanlee/essdm_scripts/master/dm_setup.bash -o dm_setup.bash
 ```
 
 ### Execute the script
-
+* In case, no user interface (no X windows)
 ```
-bash dm_setup.bash 
+$ bash dm_setup.bash 
+```
+
+* In case, an user interface (yes X windows, Gnome, etc)
+```
+$ bash dm_setup.bash gui
 ```
 
 ## Reference 
 https://ess-ics.atlassian.net/wiki/display/DE/ESS+physical+DM+setup
 
 ## Installation Example
-Please see the [README.md in centos7_installation directory](./centos7_installation/README.md).
+Please see the [README.md in DMonVM](./DMonVM/README.md).
