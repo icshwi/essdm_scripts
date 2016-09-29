@@ -223,7 +223,7 @@ function preparation() {
         
     # Install "git and ansible" for real works
     # 
-    ${SUDO_CMD} yum -y install git ansible pv
+    ${SUDO_CMD} yum -y install git ansible xterm
 
     end_func ${func_name}
 }
@@ -267,31 +267,39 @@ function yum_extra(){
 
 function update_eeelocal_parameters() {
 
-    local func_name=${FUNCNAME[*]}
-
-    ini_func ${func_name}
-    
+    local func_name=${FUNCNAME[*]}; ini_func ${func_name};
     checkstr ${SC_GIT_SRC_DIR}; checkstr ${SC_IOCUSER};
 
-    
     local target_dir=${SC_GIT_SRC_DIR}/roles/EEElocal
 
     # Replace the default user (ess) with the user who executes this script (whoami)
     printf "... Replace the default user (ess) with \"%s\" in %s\n\n" "${SC_IOCUSER}" "${target_dir}/tasks/main.yml";
+
     # " is needed to transfer bash variable into sed
     sed -i~ "s/=ess/=${SC_IOCUSER}/g" "${target_dir}/tasks/main.yml"
 
     # Replace the default user, and add log files for rsync-epics.service and rsync-startup.service
-
     printf "... Replace the default user (ess) with \"%s\" in %s \n\n... Add logfiles in %s\n" \
 	   "${SC_IOCUSER}" "${target_dir}/files/rsync-{epics,startup}.service" \
 	   "/tmp/rsync-{epics,startup}.log";
+
+    
+   
+    local rsync_server="rsync://owncloud01.esss.lu.se:80";
+    local rsync_epics_log="/tmp/rsync-epics.log"
+    local rsync_startup_log="/tmp/rsync-startup.log"
+    
+    local rsync_general_option="--recursive --links --perms --times --timeout 120 --exclude='.git SL6-x86_64' ";
+
+    local rsync_epics_option="${rsync_general_option} --log-file=${rsync_epics_log} ";
+    local rsync_startup_option="${rsync_general_option} --log-file=${rsync_startup_log} ";
+    
     cat > ${target_dir}/files/rsync-epics.service <<EOF
 [Unit]
 Description=Script that syncs epics folder from the EEE server, hacked by dm_setup.bash
 
 [Service]
-ExecStart=/usr/bin/bash -c "rsync --recursive --links --perms --times --timeout 120 --log-file=/tmp/rsync-epics.log rsync://owncloud01.esss.lu.se:80/epics /opt/epics --chmod=Dugo=rwx,Fuog=rwx"
+ExecStart=/usr/bin/bash -c "rsync ${rsync_epics_option} ${rsync_server}/epics /opt/epics --chmod=Dugo=rwx,Fuog=rwx"
 User=${SC_IOCUSER}
 
 [Install]
@@ -304,13 +312,16 @@ EOF
 Description=Script that syncs startup folder from the EEE server
 
 [Service]
-ExecStart=/usr/bin/bash -c "rsync --recursive --links --perms --times --timeout 120 --log-file=/tmp/rsync-startup.log rsync://owncloud01.esss.lu.se:80/startup /opt/startup --chmod=Dugo=rwx,Fuog=rwx"
+ExecStart=/usr/bin/bash -c "rsync ${rsync_startup_option} ${rsync_server}/startup /opt/startup --chmod=Dugo=rwx,Fuog=rwx"
 User=${SC_IOCUSER}
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
+
+    xterm -e -hold -display "Rsync monitor" tail -f ${rsync_epics_log}
+    
     end_func ${func_name};  
     
 }
