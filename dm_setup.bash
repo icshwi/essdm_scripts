@@ -295,21 +295,18 @@ function update_eeelocal_parameters() {
 
     #
     # Rsync appends its log the existent log file, so I copy them in different time
+    # Do we need to track down?
 
-    cp ${rsync_epics_log} ${rsync_epics_log}_${SC_LOGDATE}
-    cp ${rsync_startup_log} ${rsync_startup_log}_${SC_LOGDATE}
-
-    # Compress them into a static gzip file, which can be overwrite in next rsync. So, we
-    # only keep one history before.
-    #
-    cat  ${rsync_startup_log}_${SC_LOGDATE} ${rsync_startup_log}_${SC_LOGDATE} | gzip >  ${rsync_log_gzip}
+    # cp ${rsync_epics_log} ${rsync_epics_log}_${SC_LOGDATE}
+    # cp ${rsync_startup_log} ${rsync_startup_log}_${SC_LOGDATE}
 
     # # Nullify them 
     # # 
-    # cat /dev/null > ${rsync_epics_log};
-    # cat /dev/null > ${rsync_startup_log};
+    #cat /dev/null > ${rsync_epics_log};
+    #cat /dev/null > ${rsync_startup_log};
 
     # Add some information before showing actual log information of RSYNC
+    # Only valid at the first instalation
     #
     cat > ${rsync_epics_log} <<EOF
 
