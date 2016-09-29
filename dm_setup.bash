@@ -304,11 +304,29 @@ function update_eeelocal_parameters() {
     #
     cat  ${rsync_startup_log}_${SC_LOGDATE} ${rsync_startup_log}_${SC_LOGDATE} | gzip >  ${rsync_log_gzip}
 
-    # Nullify them 
-    # 
-    cat /dev/null > ${rsync_epics_log};
-    cat /dev/null > ${rsync_startup_log};
-    
+    # # Nullify them 
+    # # 
+    # cat /dev/null > ${rsync_epics_log};
+    # cat /dev/null > ${rsync_startup_log};
+
+    # Add some information before showing actual log information of RSYNC
+    #
+    cat > ${rsync_epics_log} <<EOF
+
+Note that rsync-epics.servive is not running currently,
+Please wait for it, it will show up here soooon......
+This screen is updated every 2 seconds, to check the rsync log file
+in ${rsync_epics_log}. 
+
+EOF
+    cat > ${rsync_startup_log} <<EOF
+
+Note that rsync-startup.servive is not running currently,
+Please wait for it, it will show up here soooon......
+This screen is updated every 2 seconds, to check the rsync log file
+in ${rsync_epics_log}. 
+
+EOF
     cat > ${target_dir}/files/rsync-epics.service <<EOF
 [Unit]
 Description=Script that syncs epics folder from the EEE server, hacked by dm_setup.bash
