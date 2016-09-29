@@ -44,13 +44,15 @@
 
 ## Check two important things
 
-* Please check two things : 1) Installation source should be **Local media** and 2) Software selection is recommended as **GNOME DESKTOP**
+* Please check following two things :
+1) Installation source should be **Local media** (mandatory)
+2) Software selection is recommended as **GNOME DESKTOP** (option)
 
 ![Connection Example](12.png)
 
 ## Set USER Settings
 
-* Give an user as **Administrator** permmission
+* Give an user as **Administrator** permission
 
 ![Connection Example](13.png)
 ![Connection Example](14.png)
@@ -63,9 +65,10 @@
 
 # ESS Development Environment Setup
 
-* Version : one can select 
+* Version : the script will ask an user which ESS DM version one would like to install
 * Selected Option (TRUE) : EEE Local installation / CS-Studio 
-* Unselected Option (FALSE) : ESS Active Directory service / OpenXAL / IPython
+* Non-selected Option (FALSE) : ESS Active Directory service / OpenXAL / IPython
+
 
 ## Login
 
@@ -75,16 +78,17 @@
 
 ![Connection Example](18.png)
 
-* Set the font size as 9 for better view
+* Set the font size as 9 for better view (option)
 
 ![Connection Example](19.png)
 
-* Set the scrollbar as unlimited for easy tracking on the installation log
+* Set the scroll-bar as unlimited for easy tracking on the installation log (option)
 
 ![Connection Example](20.png)
 
 
-## Download the script 
+## Download the script
+
 ```
 $ curl -L https://git.io/vi8DA -o dm_setup.bash
 ```
@@ -93,21 +97,30 @@ $ curl -L https://git.io/vi8DA -o dm_setup.bash
 
 ## Run the script
 
-* Once one can open another terminal, gui option is recommended in order to see the EEE Rsync status easily. Without **gui** option, one can monitor it by oneself.
+* We selected **GNOME Desktop** so we can use "gui" option.
 
 ```
 $ bash dm_setup.bash gui
 ```
+
+* If one doesn't select any UI, simply run 
+
+```
+$ bash dm_setup.bash
+```
+
 ![Connection Example](22.png)
+
 
 ## Select the release version 
 
 * Please see the following site for more information.
+
 https://ess-ics.atlassian.net/wiki/x/MoL-Ag
 
 ![Connection Example](23.png)
 
-* One can see the rsync-epics.log in another window
+* With "gui" option, one can see the rsync-epics.log in another window. It is just another convenient terminal to show rsync status, so one can monitor it by oneself. 
 
 ![Connection Example](24.png)
 
@@ -116,7 +129,7 @@ https://ess-ics.atlassian.net/wiki/x/MoL-Ag
 ![Connection Example](25.png)
 ![Connection Example](26.png)
 
-* Whole script is done, however, RSYNC is in progress. At this moment, EPICS environment is not ready, but one can use the CS-Studio from now on.
+* the procedure of the script is done, however, RSYNC is still in progress if network is slow. EPICS environment is not ready, but CS-Studio is ready. 
 
 ![Connection Example](27.png)
 ![Connection Example](28.png)
@@ -126,8 +139,10 @@ https://ess-ics.atlassian.net/wiki/x/MoL-Ag
 ![Connection Example](32.png)
 
 
-* Rsync is done
+* Rsync is done, yes, that's it. Technically, you are  ready to use.
+
 ![Connection Example](33.png)
+
 
 ## Run the SoftIOC via iocsh
 * Open another terminal
