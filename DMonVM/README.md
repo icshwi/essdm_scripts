@@ -83,11 +83,11 @@ Skip if one wants to install CentOS on the physical machine
 
 ![Connection Example](18.png)
 
-* Set the font size as 9 for better view (option)
+* Set the font size as 9 for better view (optional)
 
 ![Connection Example](19.png)
 
-* Set the scroll-bar as unlimited for easy tracking on the installation log (option)
+* Set the scroll-bar as unlimited for easy tracking on the installation log (optional)
 
 ![Connection Example](20.png)
 
