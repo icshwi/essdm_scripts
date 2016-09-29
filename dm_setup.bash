@@ -36,6 +36,7 @@ declare -gr SC_TOP="$(dirname "$SC_SCRIPT")"
 declare -gr SC_LOGDATE="$(date +%Y%b%d-%H%M-%S%Z)"
 declare -gr SC_IOCUSER="$(whoami)"
 
+echo $SC_IOCUSER;
 # Generic : Redefine pushd and popd to reduce their output messages
 # 
 function pushd() { builtin pushd "$@" > /dev/null; }
@@ -222,7 +223,7 @@ function preparation() {
         
     # Install "git and ansible" for real works
     # 
-    ${SUDO_CMD} yum -y install git ansible
+    ${SUDO_CMD} yum -y install git ansible pv
 
     end_func ${func_name}
 }
@@ -276,9 +277,9 @@ function update_eeelocal_parameters() {
     local target_dir=${SC_GIT_SRC_DIR}/roles/EEElocal
 
     # Replace the default user (ess) with the user who executes this script (whoami)
-    printf "... Replace the default user (ess) with %s in %s\n\n" "${SC_IOCUSER}" "${target_dir}/tasks/main.yml";
-    
-    sed -i~ 's/=ess/=${SC_IOCUSER}/g' ${target_dir}/tasks/main.yml
+    printf "... Replace the default user (ess) with \"%s\" in %s\n\n" "${SC_IOCUSER}" "${target_dir}/tasks/main.yml";
+    # " is needed to transfer bash variable into sed
+    sed -i~ "s/=ess/=${SC_IOCUSER}/g" "${target_dir}/tasks/main.yml"
 
     # Replace the default user, and add log files for rsync-epics.service and rsync-startup.service
 
@@ -314,17 +315,17 @@ EOF
     
 }
 
-# ${SUDO_CMD} -v
+${SUDO_CMD} -v
 
-# while [ true ];
-# do
-#     ${SUDO_CMD} -n /bin/true;
-#     sleep 60;
-#     kill -0 "$$" || exit;
-# done 2>/dev/null &
+while [ true ];
+do
+    ${SUDO_CMD} -n /bin/true;
+    sleep 60;
+    kill -0 "$$" || exit;
+done 2>/dev/null &
 
 
-# preparation
+preparation
 
 #
 #
