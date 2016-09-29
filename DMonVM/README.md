@@ -23,7 +23,7 @@ Skip if one wants to install CentOS on the physical machine
 
 ![Connection Example](5.png)
 
-### Add the CentOS ios image into the VM which just is created.
+### Add the CentOS iso image into the VM which just is created.
 * Storage > Controller:IDE > Optical Drive
 
 ![Connection Example](6.png)
