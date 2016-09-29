@@ -177,7 +177,7 @@ declare -gr SUDO_CMD="sudo"
 declare -gr ANSIBLE_VARS="DEVENV_SSSD=false DEVENV_EEE=local DEVENV_CSS=true DEVENV_OPENXAL=false DEVENV_IPYTHON=false"
 declare -gr rsync_epics_log="/tmp/rsync-epics.log"
 declare -gr rsync_startup_log="/tmp/rsync-startup.log"
-    
+declare -gr rsync_log_gz="/tmp/rsync-log.gz"
 
 # Specific : preparation
 #
@@ -292,6 +292,22 @@ function update_eeelocal_parameters() {
 
     local rsync_epics_option="${rsync_general_option} --log-file=${rsync_epics_log} ";
     local rsync_startup_option="${rsync_general_option} --log-file=${rsync_startup_log} ";
+
+    #
+    # Rsync appends its log the existent log file, so I copy them in different time
+
+    cp ${rsync_epics_log} ${rsync_epics_log}_${SC_LOGDATE}
+    cp ${rsync_startup_log} ${rsync_startup_log}_${SC_LOGDATE}
+
+    # Compress them into a static gzip file, which can be overwrite in next rsync. So, we
+    # only keep one history before.
+    #
+    cat  ${rsync_startup_log}_${SC_LOGDATE} ${rsync_startup_log}_${SC_LOGDATE} | gzip >  ${rsync_log_gzip}
+
+    # Nullify them 
+    # 
+    cat /dev/null > ${rsync_epics_log};
+    cat /dev/null > ${rsync_startup_log};
     
     cat > ${target_dir}/files/rsync-epics.service <<EOF
 [Unit]
