@@ -36,7 +36,6 @@ declare -gr SC_TOP="$(dirname "$SC_SCRIPT")"
 declare -gr SC_LOGDATE="$(date +%Y%b%d-%H%M-%S%Z)"
 declare -gr SC_IOCUSER="$(whoami)"
 
-echo $SC_IOCUSER;
 # Generic : Redefine pushd and popd to reduce their output messages
 # 
 function pushd() { builtin pushd "$@" > /dev/null; }
@@ -176,7 +175,9 @@ function git_selection() {
 #
 declare -gr SUDO_CMD="sudo"
 declare -gr ANSIBLE_VARS="DEVENV_SSSD=false DEVENV_EEE=local DEVENV_CSS=true DEVENV_OPENXAL=false DEVENV_IPYTHON=false"
-
+declare -gr rsync_epics_log="/tmp/rsync-epics.log"
+declare -gr rsync_startup_log="/tmp/rsync-startup.log"
+    
 
 # Specific : preparation
 #
@@ -254,12 +255,12 @@ function yum_extra(){
     ini_func ${func_name}
 	
     checkstr ${SUDO_CMD}
-    #    declare extra_package_list="emacs tree screen lightdm"
 
-    ${SUDO_CMD} yum -y install emacs tree screen
-    #    ${SUDO_CMD} systemctl disable gdm.service
-    #    ${SUDO_CMD} systemctl enable lightdm.service
-    ${SUDO_CMD} yum -y update
+    ${SUDO_CMD} yum -y install emacs screen
+
+    # Now it is safe to run update by an user, let them do this job.
+    
+    #    ${SUDO_CMD} yum -y update
  
     end_func ${func_name}
 }
@@ -286,9 +287,7 @@ function update_eeelocal_parameters() {
     
    
     local rsync_server="rsync://owncloud01.esss.lu.se:80";
-    local rsync_epics_log="/tmp/rsync-epics.log"
-    local rsync_startup_log="/tmp/rsync-startup.log"
-    
+  
     local rsync_general_option="--recursive --links --perms --times --timeout 120 --exclude='.git SL6-x86_64' ";
 
     local rsync_epics_option="${rsync_general_option} --log-file=${rsync_epics_log} ";
@@ -319,11 +318,10 @@ User=${SC_IOCUSER}
 WantedBy=multi-user.target
 EOF
 
-    xterm -e -title "EEE rsync status" -e "tail -n 10 -f ${rsync_epics_log}"&
-     
     end_func ${func_name};  
     
 }
+
 
 ${SUDO_CMD} -v
 
@@ -354,6 +352,12 @@ pushd ${SC_GIT_SRC_DIR}
 git_selection
 update_eeelocal_parameters
 
+# This command is only valid, the GUI is selected to install"
+# Postpone to add the functionalty after introducing to check the UI installation status
+#
+
+# xterm -title "EEE rsync status" -e "watch -n 2 tail -n 10 -f ${rsync_epics_log}"&
+     
 
 ini_func "Ansible Playbook"
 ${SUDO_CMD} ansible-playbook -i "localhost," -c local devenv.yml --extra-vars="${ANSIBLE_VARS}"
@@ -361,10 +365,12 @@ end_func "Ansible Playbook"
 #
 #
 popd
+
+
 #
 #
 #yum_gui
-#yum_extra
+yum_extra
 #
 exit
 
