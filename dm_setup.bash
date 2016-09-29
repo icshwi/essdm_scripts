@@ -356,7 +356,7 @@ update_eeelocal_parameters
 # Postpone to add the functionalty after introducing to check the UI installation status
 #
 
-# xterm -title "EEE rsync status" -e "watch -n 2 tail -n 10 -f ${rsync_epics_log}"&
+# nice xterm -title "EEE rsync status" -geometry 180x20+0+0 -e "watch -n 2 tail -n 10 -f ${rsync_epics_log}"&
      
 
 ini_func "Ansible Playbook"
