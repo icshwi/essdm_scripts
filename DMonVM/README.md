@@ -1,48 +1,53 @@
 # Download 
 
-# CentOS 7.1 1503 Installation Procedure on VirtualBox
 
-## New > Select **Linux** and **Red Hat (64bit)**, and Give the relevant name
+# Minimal VirtualBox Configuration
+
+Skip if one wants to install CentOS on the physical machine
+
+### New > Select **Linux** and **Red Hat (64bit)**, and Give the relevant name
 
 ![Connection Example](0.png)
 
-## The minimum recommended memory size is 2GB
+### The minimum recommended memory size is 2GB
 
 ![Connection Example](1.png)
 
-## Create Hard Disk 
+### Create Hard Disk 
 
 ![Connection Example](2.png)
 ![Connection Example](3.png)
 ![Connection Example](4.png)
 
-## The minimum disk size is **16GB**. 
+### The minimum disk size is **16GB**. 
 
 ![Connection Example](5.png)
 
-## Add the CentOS ios image into the VM which just is created.
+### Add the CentOS ios image into the VM which just is created.
 * Storage > Controller:IDE > Optical Drive
 
 ![Connection Example](6.png)
 
-## Slightly increase Video Memory 32MB
+### Slightly increase Video Memory 32MB
 
 ![Connection Example](7.png)
 
-## Start the VM 
+### Start the VM 
 
 ![Connection Example](8.png)
 
-## Select *Install CentOS 7*
+# CentOS 7.1 1503 Installation Procedure
+
+### Select **Install CentOS 7**
 
 ![Connection Example](9.png)
 
-## Follow the simple instruction, and choose what you prefer
+### Follow the instruction, and choose what you prefer
 
 ![Connection Example](10.png)
 ![Connection Example](11.png)
 
-## Check two important things
+### Check two important things
 
 * Please check following two things :
 1) Installation source should be **Local media** (mandatory)
@@ -50,7 +55,7 @@
 
 ![Connection Example](12.png)
 
-## Set USER Settings
+### Set USER Settings
 
 * Give an user as **Administrator** permission
 
@@ -58,7 +63,7 @@
 ![Connection Example](14.png)
 ![Connection Example](15.png)
 
-## Reboot the machine
+### Reboot the machine
 
 ![Connection Example](16.png)
 
@@ -70,11 +75,11 @@
 * Non-selected Option (FALSE) : ESS Active Directory service / OpenXAL / IPython
 
 
-## Login
+### Login
 
 ![Connection Example](17.png)
 
-## Open an terminal
+### Open an terminal
 
 ![Connection Example](18.png)
 
@@ -87,7 +92,7 @@
 ![Connection Example](20.png)
 
 
-## Download the script
+### Download the script
 
 ```
 $ curl -L https://git.io/vi8DA -o dm_setup.bash
@@ -95,7 +100,7 @@ $ curl -L https://git.io/vi8DA -o dm_setup.bash
 
 ![Connection Example](21.png)
 
-## Run the script
+### Run the script
 
 * We selected **GNOME Desktop** so we can use "gui" option.
 
@@ -112,7 +117,7 @@ $ bash dm_setup.bash
 ![Connection Example](22.png)
 
 
-## Select the release version 
+### Select the release version 
 
 * Please see the following site for more information.
 
@@ -144,7 +149,7 @@ https://ess-ics.atlassian.net/wiki/x/MoL-Ag
 ![Connection Example](33.png)
 
 
-## Run the SoftIOC via iocsh
+### Run the SoftIOC via iocsh
 * Open another terminal
 * type iocsh
 ```
@@ -154,7 +159,7 @@ iocsh
 ![Connection Example](34.png)
 ![Connection Example](35.png)
 
-## Run CS-Studio 
+### Run CS-Studio 
 ```
 css
 ```
