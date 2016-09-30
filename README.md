@@ -1,6 +1,6 @@
 essdm_scripts
 ======
-ESS Physical Development Machine (DM) Setup Script
+ESS Physical Development Machine (DM) Setup Script, which is a *wrapper script* to reduce a human interaction while configuration of the ESS DM in order to minimize any potential failure senario. It follows the exact same procedure, which the Reference [1] suggests and it contains some possible improvement for the ansible configuration also. The possible improvement, once we verify as valuable, should be merged into the main ansible deployment stream. 
 
 ## Goal
 * This script should be used for the ESS Physical DM setup for CentOS 7.1 1503.
@@ -53,7 +53,7 @@ $ bash dm_setup.bash gui
 ```
 
 ## Reference 
-https://ess-ics.atlassian.net/wiki/display/DE/ESS+physical+DM+setup
+[1] https://ess-ics.atlassian.net/wiki/display/DE/ESS+physical+DM+setup
 
 ## Installation Example
 Please see the [README.md in DMonVM](./DMonVM/README.md).
