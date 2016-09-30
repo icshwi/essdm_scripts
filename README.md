@@ -12,7 +12,7 @@ ESS Physical Development Machine (DM) Setup Script
 ## CentOS 7.1 (1503)
 Download the CentOS 7.1 (1503) as following links :
 
-### UI in most case
+### User Interface in most case
 * http://vault.centos.org/7.1.1503/isos/x86_64/CentOS-7-x86_64-DVD-1503-01.iso
 
 ### Non User Interface - console
@@ -57,3 +57,6 @@ https://ess-ics.atlassian.net/wiki/display/DE/ESS+physical+DM+setup
 
 ## Installation Example
 Please see the [README.md in DMonVM](./DMonVM/README.md).
+
+## Issues
+* Mate-Desktop has the dependency issue
