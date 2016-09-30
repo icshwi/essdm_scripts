@@ -44,14 +44,9 @@ $ curl -L https://raw.githubusercontent.com/jeonghanlee/essdm_scripts/master/dm_
 ```
 
 ### Execute the script
-* In case, no user interface (no X windows)
+
 ```
 $ bash dm_setup.bash 
-```
-
-* In case, an user interface (yes X windows, Gnome, etc)
-```
-$ bash dm_setup.bash gui
 ```
 
 ## Reference 
