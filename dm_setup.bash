@@ -20,7 +20,7 @@
 # Author : Jeong Han Lee
 # email  : han.lee@esss.se
 # Date   : 
-# version : 0.9.1 
+# version : 0.9.2 
 #
 # http://www.gnu.org/software/bash/manual/bashref.html#Bash-Builtins
 
@@ -178,6 +178,7 @@ declare -gr ANSIBLE_VARS="DEVENV_SSSD=false DEVENV_EEE=local DEVENV_CSS=true DEV
 declare -gr rsync_epics_log="/tmp/rsync-epics.log"
 declare -gr rsync_startup_log="/tmp/rsync-startup.log"
 declare -gr rsync_log_gz="/tmp/rsync-log.gz"
+declare -g  GUI_STATUS=""
 
 # Specific : preparation
 #
@@ -229,6 +230,21 @@ function preparation() {
     end_func ${func_name}
 }
 
+
+function is-active-ui() {
+
+    local func_name=${FUNCNAME[*]}; ini_func ${func_name};
+
+    GUI_STATUS="$(systemctl is-active graphical.target)";
+
+    if [[ ${GUI_STATUS} = "active" ]]; then
+	printf "\n User Interface was detected, execute the monitoring terminal for the EEE Rsync status\n\n";
+	nice xterm -title "EEE rsync status" -geometry 140x12+0+0 -e "nice watch -n 2 tail -n 10 ${rsync_epics_log}"&
+    fi
+     
+    end_func ${func_name};
+}
+
 function yum_gui(){
 
     local func_name=${FUNCNAME[*]}
@@ -247,6 +263,8 @@ function yum_gui(){
  
     end_func ${func_name}  
 }
+
+
 
 function yum_extra(){
     
@@ -385,14 +403,7 @@ pushd ${SC_GIT_SRC_DIR}
 git_selection
 update_eeelocal_parameters
 
-# This command is only valid, the GUI is selected to install"
-# Postpone to add the functionalty after introducing to check the UI installation status
-#
-
-if [[ ${1} = "gui" ]]; then
-    nice xterm -title "EEE rsync status" -geometry 140x12+0+0 -e "nice watch -n 2 tail -n 10 ${rsync_epics_log}"&
-fi
-     
+is-active-ui
 
 ini_func "Ansible Playbook"
 ${SUDO_CMD} ansible-playbook -i "localhost," -c local devenv.yml --extra-vars="${ANSIBLE_VARS}"
