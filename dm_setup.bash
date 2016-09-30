@@ -224,7 +224,7 @@ function preparation() {
         
     # Install "git and ansible" for real works
     # 
-    ${SUDO_CMD} yum -y install git ansible xterm
+    ${SUDO_CMD} yum -y install git ansible xterm xorg-x11-fonts-misc
 
     end_func ${func_name}
 }
