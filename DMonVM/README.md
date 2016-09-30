@@ -111,20 +111,9 @@ $ curl -L https://git.io/vi8DA -o dm_setup.bash
 
 ### Run the script
 
-* We selected **GNOME Desktop** so we can use "gui" option.
-
-```
-$ bash dm_setup.bash gui
-```
-
-* If one doesn't select any UI, simply run 
-
 ```
 $ bash dm_setup.bash
 ```
-
-![Connection Example](22.png)
-
 
 ### Select the release version 
 
