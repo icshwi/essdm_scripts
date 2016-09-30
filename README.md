@@ -8,6 +8,16 @@ ESS Physical Development Machine (DM) Setup Script
 * This script should focus *ONLY* two options (EEE Local installation and CS-Studio installation) 
 * This script should provide an additional installation of several packages
 
+
+## CentOS 7.1 (1503)
+Download the CentOS 7.1 (1503) as following links :
+
+### UI in most case
+* http://vault.centos.org/7.1.1503/isos/x86_64/CentOS-7-x86_64-DVD-1503-01.iso
+
+### Non User Interface - console
+* http://vault.centos.org/7.1.1503/isos/x86_64/CentOS-7-x86_64-Minimal-1503-01.iso
+
 ## Things one should do carefully
 * Set Installation Source as **Local media** 
 * Create iocuser and set the administrator permission
