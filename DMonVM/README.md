@@ -1,5 +1,14 @@
 # Download 
 
+## CentOS 7.1 (1503)
+Download the CentOS 7.1 (1503) as following links :
+
+### UI in most case
+* http://vault.centos.org/7.1.1503/isos/x86_64/CentOS-7-x86_64-DVD-1503-01.iso
+
+### Non User Interface - console
+* http://vault.centos.org/7.1.1503/isos/x86_64/CentOS-7-x86_64-Minimal-1503-01.iso
+
 
 # Minimal VirtualBox Configuration
 
