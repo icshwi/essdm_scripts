@@ -20,7 +20,7 @@
 # Author : Jeong Han Lee
 # email  : han.lee@esss.se
 # Date   : 
-# version : 0.9.2 
+# version : 0.9.3 
 #
 # http://www.gnu.org/software/bash/manual/bashref.html#Bash-Builtins
 
@@ -238,14 +238,26 @@ function is-active-ui() {
     GUI_STATUS="$(systemctl is-active graphical.target)";
 
     if [[ ${GUI_STATUS} = "active" ]]; then
+	# If a system has the GUI, it returns "active"
 	printf "\n User Interface was detected, execute the monitoring terminal for the EEE Rsync status\n\n";
 	${SUDO_CMD} yum -y install xterm xorg-x11-fonts-misc
 	nice xterm -title "EEE rsync status" -geometry 140x12+0+0 -e "nice watch -n 2 tail -n 10 ${rsync_epics_log}"&
+	# If a system doesn
+	t 
     else
+	# If a system has the NO GUI, it returns "inactive"
+
 	# In minimal image, minimal selection case : 
 	# unzip doesn't be ready to use, force to install it
 	#
-	${SUDO_CMD} yum -y install unzip
+	# Package "redhat-menus" creates the /etc/xdg/menus directory,
+	# so ansible can copy their menu/* files into
+	# /etc/xdg/menus/applications-merged
+	#
+	# Fortunately, these packages has no other heavy dependency on
+	# other packages.
+	# 
+	${SUDO_CMD} yum -y install unzip redhat-menus xdg-utils
     fi
      
     end_func ${func_name};
