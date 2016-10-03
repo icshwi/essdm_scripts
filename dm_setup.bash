@@ -42,8 +42,8 @@ function pushd() { builtin pushd "$@" > /dev/null; }
 function popd()  { builtin popd  "$@" > /dev/null; }
 
 
-function ini_func() { printf "\n>>>> You are entering in : %s\n" "${1}"; }
-function end_func() { printf "<<<< You are leaving from %s\n" "${1}"; }
+function ini_func() { sleep 1; printf "\n>>>> You are entering in : %s\n" "${1}"; }
+function end_func() { sleep 1; printf "<<<< You are leaving from %s\n" "${1}"; }
 
 function checkstr() {
     if [ -z "$1" ]; then
@@ -70,8 +70,7 @@ declare -g SC_GIT_SRC_URL=""
 # 
 function git_clone() {
 
-    local func_name=${FUNCNAME[*]}
-    ini_func ${func_name}
+    local func_name=${FUNCNAME[*]}; ini_func ${func_name}
 
     checkstr ${SC_LOGDATE}
     checkstr ${SC_GIT_SRC_URL}
@@ -188,10 +187,8 @@ declare -g  GUI_STATUS=""
 
 function preparation() {
     
-    local func_name=${FUNCNAME[*]}
-    ini_func ${func_name}
-
-    checkstr ${SUDO_CMD}
+    local func_name=${FUNCNAME[*]}; ini_func ${func_name};
+    checkstr ${SUDO_CMD};
     
     declare -r yum_pid="/var/run/yum.pid"
 
@@ -225,28 +222,29 @@ function preparation() {
         
     # Install "git and ansible" for real works
     # 
-    ${SUDO_CMD} yum -y install git ansible
+    ${SUDO_CMD} yum -y install git ansible;
 
-    end_func ${func_name}
+    end_func ${func_name};
 }
 
 
 function is-active-ui() {
 
     local func_name=${FUNCNAME[*]}; ini_func ${func_name};
-
+    
     GUI_STATUS="$(systemctl is-active graphical.target)";
 
     if [[ ${GUI_STATUS} = "active" ]]; then
 	# If a system has the GUI, it returns "active"
-	printf "\n User Interface was detected, execute the monitoring terminal for the EEE Rsync status\n\n";
+	printf "\n User Interface was detected, \nexecute the monitoring terminal for the EEE Rsync status and install the required packages for them.\n\n";
+	
 	${SUDO_CMD} yum -y install xterm xorg-x11-fonts-misc
 	nice xterm -title "EEE rsync status" -geometry 140x12+0+0 -e "nice watch -n 2 tail -n 10 ${rsync_epics_log}"&
 	# If a system doesn
 	t 
     else
 	# If a system has the NO GUI, it returns "inactive"
-
+	printf "\n NO User Interface was detected, install the required packages to work around ansible errors\n\n";
 	# In minimal image, minimal selection case : 
 	# unzip doesn't be ready to use, force to install it
 	#
@@ -259,7 +257,7 @@ function is-active-ui() {
 	# 
 	${SUDO_CMD} yum -y install unzip redhat-menus xdg-utils
     fi
-     
+
     end_func ${func_name};
 }
 
@@ -396,7 +394,7 @@ ${SUDO_CMD} -v
 while [ true ];
 do
     ${SUDO_CMD} -n /bin/true;
-    sleep 60;
+    sleep 120;
     kill -0 "$$" || exit;
 done 2>/dev/null &
 
@@ -419,8 +417,8 @@ pushd ${SC_GIT_SRC_DIR}
 #
 #
 git_selection
-update_eeelocal_parameters
 
+update_eeelocal_parameters
 is-active-ui
 
 ini_func "Ansible Playbook"
@@ -436,5 +434,11 @@ popd
 #yum_gui
 yum_extra
 #
+
+if [[ ${GUI_STATUS} = "inactive" ]]; then
+    printf "\nNO User Interface. \nTherefore, one should wait for rsync EPICS processe\n in order to check the ESS EPICS Environment.\n $tail -f ${rsync_epics_log}";
+fi
+
+     
 exit
 
