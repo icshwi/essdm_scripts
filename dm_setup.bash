@@ -391,10 +391,16 @@ EOF
 
 ${SUDO_CMD} -v
 
+#
+# This "keep sudo" functionality
+# doesn't work in the no-gui environment (minimal iso and minimal selection)
+# One needs to type ones password twice during the entire setup procedure
+#
+
 while [ true ];
 do
     ${SUDO_CMD} -n /bin/true;
-    sleep 120;
+    sleep 60;
     kill -0 "$$" || exit;
 done 2>/dev/null &
 
@@ -436,7 +442,7 @@ yum_extra
 #
 
 if [[ ${GUI_STATUS} = "inactive" ]]; then
-    printf "\nNO User Interface. \nTherefore, one should wait for rsync EPICS processe\n in order to check the ESS EPICS Environment.\n $tail -f ${rsync_epics_log}";
+    printf "\nNO User Interface. \nTherefore, one should wait for rsync EPICS processe \nin order to check the ESS EPICS Environment.\n tail -n 10 -f ${rsync_epics_log}\n\n";
 fi
 
      
