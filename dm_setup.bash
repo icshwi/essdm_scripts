@@ -225,7 +225,7 @@ function preparation() {
         
     # Install "git and ansible" for real works
     # 
-    ${SUDO_CMD} yum -y install git ansible unzip xterm xorg-x11-fonts-misc
+    ${SUDO_CMD} yum -y install git ansible
 
     end_func ${func_name}
 }
@@ -239,7 +239,13 @@ function is-active-ui() {
 
     if [[ ${GUI_STATUS} = "active" ]]; then
 	printf "\n User Interface was detected, execute the monitoring terminal for the EEE Rsync status\n\n";
+	${SUDO_CMD} yum -y install xterm xorg-x11-fonts-misc
 	nice xterm -title "EEE rsync status" -geometry 140x12+0+0 -e "nice watch -n 2 tail -n 10 ${rsync_epics_log}"&
+    else
+	# In minimal image, minimal selection case : 
+	# unzip doesn't be ready to use, force to install it
+	#
+	${SUDO_CMD} yum -y install unzip
     fi
      
     end_func ${func_name};
