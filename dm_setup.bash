@@ -240,8 +240,6 @@ function is-active-ui() {
 	
 	${SUDO_CMD} yum -y install xterm xorg-x11-fonts-misc
 	nice xterm -title "EEE rsync status" -geometry 140x12+0+0 -e "nice watch -n 2 tail -n 10 ${rsync_epics_log}"&
-	# If a system doesn
-	t 
     else
 	# If a system has the NO GUI, it returns "inactive"
 	printf "\n NO User Interface was detected, install the required packages to work around ansible errors\n\n";
