@@ -222,7 +222,7 @@ function preparation() {
         
     # Install "git and ansible" for real works
     # 
-    ${SUDO_CMD} yum -y install git ansible;
+    ${SUDO_CMD} yum -y install git ansible newt;
 
     end_func ${func_name};
 }
