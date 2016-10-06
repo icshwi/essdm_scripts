@@ -43,7 +43,7 @@ function popd()  { builtin popd  "$@" > /dev/null; }
 
 
 function ini_func() { sleep 1; printf "\n>>>> You are entering in : %s\n" "${1}"; }
-function end_func() { sleep 1; printf "<<<< You are leaving from %s\n" "${1}"; }
+function end_func() { sleep 1; printf "\n<<<< You are leaving from %s\n" "${1}"; }
 
 function checkstr() {
     if [ -z "$1" ]; then
@@ -53,14 +53,15 @@ function checkstr() {
 }
 
 
-function echo_tee() {
+function printf_tee() {
 
     local input=${1};
     local target=${2};
     local command="";
     # If target exists, it will be overwritten.
-    ${SUDO_CMD} echo $input | ${SUDO_CMD} tee ${target}
+    ${SUDO_CMD} printf "%s" "${input}" | ${SUDO_CMD} tee "${target}";
 };
+
 
 
 # Generic : Global variables for git_clone, git_selection, and others
@@ -190,10 +191,22 @@ function git_selection() {
 #
 declare -gr SUDO_CMD="sudo"
 declare -gr ANSIBLE_VARS="DEVENV_SSSD=false DEVENV_EEE=local DEVENV_CSS=true DEVENV_OPENXAL=false DEVENV_IPYTHON=false"
-declare -gr rsync_epics_log="/tmp/rsync-epics.log"
-declare -gr rsync_startup_log="/tmp/rsync-startup.log"
-declare -gr ansible_log="/var/log/ansible.log"
+declare -gr RSYNC_EPICS_LOG="/tmp/rsync-epics.log"
+declare -gr RSYNC_STARTUP_LOG="/tmp/rsync-startup.log"
+declare -gr ANSIBLE_LOG="/var/log/ansible.log"
 declare -g  GUI_STATUS=""
+
+
+function print_logrotate_rule() {
+
+    local logfile=${1};
+    local user=${2};
+    printf "%s {\nmissingok\nnotifempty\nsize 100k\nyearly\ncreate 0666 %s %s\n}" \
+	   "${logfile}" \
+	   "${user}" "${user}");
+}
+
+ 
 
 # Specific : preparation
 #
@@ -205,9 +218,9 @@ function preparation() {
     
     local func_name=${FUNCNAME[*]}; ini_func ${func_name};
     checkstr ${SUDO_CMD};
-    
-    declare -r yum_pid="/var/run/yum.pid"
 
+    # yum, repository
+    declare -r yum_pid="/var/run/yum.pid"
     declare -r yum_repo_dir="/etc/yum.repos.d"
     declare -r rpmgpgkey_dir="/etc/pki/rpm-gpg/"
     declare -r repo_centos="CentOS-Base.repo"
@@ -215,9 +228,10 @@ function preparation() {
     declare -r rpmgpgkey_epel="RPM-GPG-KEY-EPEL-7"
     declare -r ess_repo_url="https://artifactory01.esss.lu.se/artifactory/list/devenv/repositories/repofiles"
 
-
-    declare -r ansible_cfg="/etc/ansible/ansible.cfg";
-    declare -r ansible_logrotate="/etc/logrotate.d/ansible";
+    # ansible 
+    local ansible_cfg="/etc/ansible/ansible.cfg";
+    local ansible_logrotate="/etc/logrotate.d/ansible";
+    local ansible_logrotate_rule=$(print_logrotate_rule "${ANSIBLE_LOG}" "${SC_IOCUSER}");
     
     # Somehow, yum is running due to PackageKit, so if so, kill it
     #
@@ -246,18 +260,15 @@ function preparation() {
 
     # Enable the ansible log
     ${SUDO_CMD} sed -i~ "s/#log_path =/log_path =/g"   "${ansible_cfg}";
-
+    ${SUDO_CMD} touch ${ANSIBLE_LOG};
+    ${SUDO_CMD} chmod 666 ${ANSIBLE_LOG};
+    
     # Enable the logrotate for ansible log
-    local ansible_logrotate_rule="${ansible_log} \{
-missingok
-notifempty
-size 100k
-yearly
-create 0666 ${SC_IOCUSER} ${SC_IOCUSER}
-\}"
+
+   
     
-    echo_tee "${ansible_logrotate_rule}" "${ansible_logrotate}";
-    
+    printprintf_tee "${ansible_logrotate_rule}" "${ansible_logrotate}";
+
     end_func ${func_name};
 }
 
@@ -273,7 +284,7 @@ function is-active-ui() {
 	printf "\n User Interface was detected, \nexecute the monitoring terminal for the EEE Rsync status and install the required packages for them.\n\n";
 	
 	${SUDO_CMD} yum -y install xterm xorg-x11-fonts-misc
-	nice xterm -title "EEE rsync status" -geometry 140x12+0+0 -e "nice watch -n 2 tail -n 10 ${rsync_epics_log}"&
+	nice xterm -title "EEE rsync status" -geometry 140x12+0+0 -e "nice watch -n 2 tail -n 10 ${RSYNC_EPICS_LOG}"&
     else
 	# If a system has the NO GUI, it returns "inactive"
 	printf "\n NO User Interface was detected, install the required packages to work around ansible errors\n\n";
@@ -331,7 +342,7 @@ function yum_extra(){
     end_func ${func_name}
 }
 
-
+ 
 function update_eeelocal_parameters() {
 
     local func_name=${FUNCNAME[*]}; ini_func ${func_name};
@@ -362,66 +373,50 @@ function update_eeelocal_parameters() {
     #
     local rsync_general_option="--recursive --links --perms --times --timeout 120 --exclude='.git/' --exclude='SL6-x86_64/' --exclude='*eldk*/' ";
 
-    local rsync_epics_option="${rsync_general_option} --log-file=${rsync_epics_log} ";
-    local rsync_startup_option="${rsync_general_option} --log-file=${rsync_startup_log} ";
+    local rsync_epics_option="${rsync_general_option} --log-file=${RSYNC_EPICS_LOG} ";
+    local rsync_startup_option="${rsync_general_option} --log-file=${RSYNC_STARTUP_LOG} ";
 
     #
     # Rsync appends its log the existent log file, so I copy them in different time
     # Do we need to track down?
 
-    # cp ${rsync_epics_log} ${rsync_epics_log}_${SC_LOGDATE}
-    # cp ${rsync_startup_log} ${rsync_startup_log}_${SC_LOGDATE}
+    # cp ${RSYNC_EPICS_LOG} ${RSYNC_EPICS_LOG}_${SC_LOGDATE}
+    # cp ${RSYNC_STARTUP_LOG} ${RSYNC_STARTUP_LOG}_${SC_LOGDATE}
 
     # # Nullify them 
     # # 
-    #cat /dev/null > ${rsync_epics_log};
-    #cat /dev/null > ${rsync_startup_log};
+    #cat /dev/null > ${RSYNC_EPICS_LOG};
+    #cat /dev/null > ${RSYNC_STARTUP_LOG};
 
    # Enable the logrotate for ansible log
 
     declare -r rsync_epics_logrotate="/etc/logrotate.d/rsync_epics";
     declare -r rsync_startup_logrotate="/etc/logrotate.d/rsync_startup";
     
-    
-    ${SUDO_CMD} cat > ${rsync_epics_logrotate} <<EOF
-${rsync_epics_log} \{
-   missingok
-   notifempty
-   size 100k
-   yearly
-   create 0666 ${SC_IOCUSER} ${SC_IOCUSER}
-\}
-EOF
-
-       
-    ${SUDO_CMD} cat > ${rsync_startup_logrotate} <<EOF
-${rsync_startup_log} \{
-   missingok
-   notifempty
-   size 100k
-   yearly
-   create 0666 ${SC_IOCUSER} ${SC_IOCUSER}
-\}
-EOF
+    local rsync_epics_logrotate_rule=$(print_logrotate_rule "${RSYNC_EPICS_LOG}" "${SC_IOCUSER}");
+    local rsync_startup_logrotate_rule=$(printf_logrotate_rule "${RSYNC_STARTUP_LOG}" "${SC_IOCUSER}");
+        
+    printf_tee "${rsync_epics_logrotate_rule}"   "${rsync_epics_logrotate}";
+    printf_tee "${rsync_startup_logrotate_rule}" "${rsync_startup_logrotate}";
     
     
     # Add some information before showing actual log information of RSYNC
     # Only valid at the first instalation
     #
-    cat > ${rsync_epics_log} <<EOF
+    cat > ${RSYNC_EPICS_LOG} <<EOF
 
 Note that rsync-epics.servive is not running currently,
 Please wait for it, it will show up here soooon......
 This screen is updated every 2 seconds, to check the rsync log file
-in ${rsync_epics_log}. 
+in ${RSYNC_EPICS_LOG}. 
 
 EOF
-    cat > ${rsync_startup_log} <<EOF
+    cat > ${RSYNC_STARTUP_LOG} <<EOF
 
 Note that rsync-startup.servive is not running currently,
 Please wait for it, it will show up here soooon......
 This screen is updated every 2 seconds, to check the rsync log file
-in ${rsync_epics_log}. 
+in ${RSYNC_EPICS_LOG}. 
 
 EOF
     cat > ${target_dir}/files/rsync-epics.service <<EOF
@@ -508,7 +503,7 @@ yum_extra
 #
 
 if [[ ${GUI_STATUS} = "inactive" ]]; then
-    printf "\nNO User Interface. \nTherefore, one should wait for rsync EPICS processe \nin order to check the ESS EPICS Environment.\n tail -n 10 -f ${rsync_epics_log}\n\n";
+    printf "\nNO User Interface. \nTherefore, one should wait for rsync EPICS processe \nin order to check the ESS EPICS Environment.\n tail -n 10 -f ${RSYNC_EPICS_LOG}\n\n";
 fi
 
      
