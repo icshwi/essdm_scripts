@@ -107,7 +107,7 @@ function git_clone() {
 
 # Generic : git_selection
 #
-# 1.0.2 : Thursday, October  6 15:05:40 CEST 2016
+# 1.0.3 : Thursday, October  6 15:34:12 CEST 2016
 #
 # Require Global vairable
 # - SC_SELECTED_GIT_SRC  : Output
@@ -136,23 +136,23 @@ function git_selection() {
     fi
 
     git_src_list+=("master")
-    git_tags=$(git describe --tags `git rev-list --tags --max-count=${n_tags}`);
+    # git_tags=$(git describe --tags `git rev-list --tags --max-count=${n_tags}`);
     
-    git_exitstatus=$?
+    # git_exitstatus=$?
 
-    if [ $git_exitstatus = 0 ]; then
-	#
-	# (${}) and ($(command))  are important to separate output as an indiviaul arrar
-	#
-	git_src_list+=(${git_tags});
-    else
-	# In case, No tags can describe, use git tag instead of git describe
-	#
-	# fatal: No tags can describe '7fce903a82d47dec92012664648cacebdacd88e1'.
-	# Try --always, or create some tags.
+    # if [ $git_exitstatus = 0 ]; then
+    # 	#
+    # 	# (${}) and ($(command))  are important to separate output as an indiviaul arrar
+    # 	#
+    # 	git_src_list+=(${git_tags});
+    # else
+    # 	# In case, No tags can describe, use git tag instead of git describe
+    # 	#
+    # 	# fatal: No tags can describe '7fce903a82d47dec92012664648cacebdacd88e1'.
+    # 	# Try --always, or create some tags.
 
-	git_src_list+=($(git tag -l --sort=-refname  | head -n${n_tags}))
-    fi
+    git_src_list+=($(git tag -l --sort=-refname  | head -n${n_tags}))
+    # fi
     
     
     for tag in "${git_src_list[@]}"
