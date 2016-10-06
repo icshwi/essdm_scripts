@@ -231,7 +231,7 @@ function preparation() {
     local ansible_cfg="/etc/ansible/ansible.cfg";
     local ansible_logrotate="/etc/logrotate.d/ansible";
     local ansible_logrotate_rule=$(print_logrotate_rule "${ANSIBLE_LOG}" "${SC_IOCUSER}");
-    local ansilbe_log_init=$(printf "Note that ansible is not running currently,\nPlease wait for it, it will show up here soon....\nThis screen is updated every 2 seconds, to check the ansible log file in %s" "${ANSIBLE_LOG}");
+    local ansilbe_log_init=$(printf "Note that ansible is not running currently,\nPlease wait for it, it will show up here soon....\nThis screen is updated every 2 seconds, to check the ansible log file in %s" "${ANSIBLE_LOG}\n");
     
     # Somehow, yum is running due to PackageKit, so if so, kill it
     #
@@ -258,17 +258,16 @@ function preparation() {
     # 
     ${SUDO_CMD} yum -y install git ansible logrotate;
 
-    # Enable the ansible log
-    ${SUDO_CMD} sed -i~ "s/#log_path =/log_path =/g"   "${ansible_cfg}";
-    ${SUDO_CMD} touch ${ANSIBLE_LOG};
+    # Enable the ansible log its path is /var/log/ansible.log
+    ${SUDO_CMD} sed -i~ "s/#log_path =/log_path =/g" "${ansible_cfg}";
 
+    # the initial log message
     printf_tee "${ansilbe_log_init}" "${ANSIBLE_LOG}";
 
+    # change the permission 
     ${SUDO_CMD} chmod 666 ${ANSIBLE_LOG};
     
     # Enable the logrotate for ansible log
-
-   
     
     printf_tee "${ansible_logrotate_rule}" "${ansible_logrotate}";
 
@@ -507,7 +506,8 @@ yum_extra
 #
 
 if [[ ${GUI_STATUS} = "inactive" ]]; then
-    printf "\nNO User Interface. \nTherefore, one should wait for rsync EPICS processe \nin order to check the ESS EPICS Environment.\n tail -n 10 -f ${RSYNC_EPICS_LOG}\n\n";
+    printf "\nNO User Interface. \nTherefore, one should wait for rsync EPICS processe \nin order to check the ESS EPICS Environment.\n tail -n 10 -f ${RSYNC_EPICS_LOG}\n";
+     printf "One can check the ansible log ${ANSIBLE_LOG} whether the ansible returns OK or not.\n\n";
 fi
 
      
