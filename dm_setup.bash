@@ -266,7 +266,7 @@ function preparation() {
 
    
     
-    printprintf_tee "${ansible_logrotate_rule}" "${ansible_logrotate}";
+    printf_tee "${ansible_logrotate_rule}" "${ansible_logrotate}";
 
     end_func ${func_name};
 }
