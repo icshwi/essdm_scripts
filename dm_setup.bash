@@ -20,7 +20,7 @@
 # Author : Jeong Han Lee
 # email  : han.lee@esss.se
 # Date   : 
-# version : 0.9.3 
+# version : 0.9.4 
 #
 # http://www.gnu.org/software/bash/manual/bashref.html#Bash-Builtins
 
@@ -43,7 +43,7 @@ function popd()  { builtin popd  "$@" > /dev/null; }
 
 
 function ini_func() { sleep 1; printf "\n>>>> You are entering in : %s\n" "${1}"; }
-function end_func() { sleep 1; printf "<<<< You are leaving from %s\n" "${1}"; }
+function end_func() { sleep 1; printf "\n<<<< You are leaving from %s\n" "${1}"; }
 
 function checkstr() {
     if [ -z "$1" ]; then
@@ -92,27 +92,56 @@ function git_clone() {
     end_func ${func_name}
 }
 
+
 # Generic : git_selection
+#
+# 1.0.2 : Thursday, October  6 15:05:40 CEST 2016
 #
 # Require Global vairable
 # - SC_SELECTED_GIT_SRC  : Output
 #
 function git_selection() {
 
-    local func_name=${FUNCNAME[*]}
-    ini_func ${func_name}
-    
+    local func_name=${FUNCNAME[*]}; ini_func ${func_name}
+
     local git_ckoutcmd=""
     local checked_git_src=""
+
+    
     declare -i index=0
     declare -i master_index=0
     declare -i list_size=0
     declare -i selected_one=0
     declare -a git_src_list=()
 
+    
+    local n_tags=${1};
+
+    # no set n_tags, set default 10
+    
+    if [[ ${n_tags} -eq 0 ]]; then
+	n_tags=10;
+    fi
 
     git_src_list+=("master")
-    git_src_list+=($(git tag -l | sort -n))
+    git_tags=$(git describe --tags `git rev-list --tags --max-count=${n_tags}`);
+    
+    git_exitstatus=$?
+
+    if [ $git_exitstatus = 0 ]; then
+	#
+	# (${}) and ($(command))  are important to separate output as an indiviaul arrar
+	#
+	git_src_list+=(${git_tags});
+    else
+	# In case, No tags can describe, use git tag instead of git describe
+	#
+	# fatal: No tags can describe '7fce903a82d47dec92012664648cacebdacd88e1'.
+	# Try --always, or create some tags.
+
+	git_src_list+=($(git tag -l --sort=-refname  | head -n${n_tags}))
+    fi
+    
     
     for tag in "${git_src_list[@]}"
     do
@@ -130,8 +159,10 @@ function git_selection() {
     # do I need this? 
     # selected_one=${line/.*}
 
+    # Without selection number, type [ENTER], 0 is selected as default.
+    #
     selected_one=${line}
-
+    
     let "list_size = ${#git_src_list[@]} - 1"
     
     if [[ "$selected_one" -gt "$list_size" ]]; then
@@ -419,10 +450,13 @@ SC_GIT_SRC_DIR=${SC_TOP}/${SC_GIT_SRC_NAME}
 git_clone
 #
 #
+
+declare -i tag_cnt=$1;
 pushd ${SC_GIT_SRC_DIR}
 #
 #
-git_selection
+
+git_selection ${tag_cnt};
 
 update_eeelocal_parameters
 is-active-ui
