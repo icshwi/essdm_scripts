@@ -52,6 +52,17 @@ function checkstr() {
     fi
 }
 
+
+function echo_tee() {
+
+    local input=${1};
+    local target=${2};
+    local command="";
+    # If target exists, it will be overwritten.
+    ${SUDO_CMD} echo $input | ${SUDO_CMD} tee ${target}
+};
+
+
 # Generic : Global variables for git_clone, git_selection, and others
 # 
 declare -g SC_SELECTED_GIT_SRC=""
@@ -237,17 +248,15 @@ function preparation() {
     ${SUDO_CMD} sed -i~ "s/#log_path =/log_path =/g"   "${ansible_cfg}";
 
     # Enable the logrotate for ansible log
+    local ansible_logrotate_rule="${ansible_log} \{
+missingok
+notifempty
+size 100k
+yearly
+create 0666 ${SC_IOCUSER} ${SC_IOCUSER}
+\}"
     
-    ${SUDO_CMD} cat > ${ansible_logrotate} <<EOF
-[Unit]
-${ansible_cfg} \{
-   missingok
-   notifempty
-   size 100k
-   yearly
-   create 0666 ${SC_IOCUSER} ${SC_IOCUSER}
-\}
-EOF
+    echo_tee "${ansible_logrotate_rule}" "${ansible_logrotate}";
     
     end_func ${func_name};
 }
