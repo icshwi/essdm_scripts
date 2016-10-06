@@ -287,7 +287,7 @@ function is-active-ui() {
 	
 	${SUDO_CMD} yum -y install xterm xorg-x11-fonts-misc
 	nice xterm -title "EEE rsync status" -geometry 140x12+0+0   -e "nice watch -n 2 tail -n 10 ${RSYNC_EPICS_LOG}"&
-	nice xterm -title "ANSIBLE   status" -geometry 140x12+0+184 -e "nice watch -n 2 tail -n 10 ${ANSIBLE_LOG}"&
+	nice xterm -title "ANSIBLE   status" -geometry 140x12+0+186 -e "nice watch -n 2 tail -n 10 ${ANSIBLE_LOG}"&
     else
 	# If a system has the NO GUI, it returns "inactive"
 	printf "\n NO User Interface was detected, install the required packages to work around ansible errors\n\n";
@@ -506,8 +506,8 @@ yum_extra
 #
 
 if [[ ${GUI_STATUS} = "inactive" ]]; then
-    printf "\nNO User Interface. \nTherefore, one should wait for rsync EPICS processe \nin order to check the ESS EPICS Environment.\n tail -n 10 -f ${RSYNC_EPICS_LOG}\n";
-     printf "One can check the ansible log ${ANSIBLE_LOG} whether the ansible returns OK or not.\n\n";
+    printf "\n>>>>>>>> NO USER INTERFACE  <<<<<<<< \n* One should wait for rsync EPICS processe \n  in order to check the ESS EPICS Environment.\n  tail -n 10 -f ${RSYNC_EPICS_LOG}\n\n";
+     printf "* One can check the ansible log ${ANSIBLE_LOG}\n  whether the ansible returns OK or not. \n  tail -f ${ANSIBLE_LOG}\n\n";
 fi
 
      
