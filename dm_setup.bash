@@ -20,7 +20,7 @@
 # Author : Jeong Han Lee
 # email  : han.lee@esss.se
 # Date   : 
-# version : 0.9.4 
+# version : 0.9.5
 #
 # http://www.gnu.org/software/bash/manual/bashref.html#Bash-Builtins
 
@@ -51,6 +51,18 @@ function checkstr() {
 	exit 1;
     fi
 }
+
+
+function printf_tee() {
+
+    local input=${1};
+    local target=${2};
+    local command="";
+    # If target exists, it will be overwritten.
+    ${SUDO_CMD} printf "%s" "${input}" | ${SUDO_CMD} tee "${target}";
+};
+
+
 
 # Generic : Global variables for git_clone, git_selection, and others
 # 
@@ -91,6 +103,7 @@ function git_clone() {
 
     end_func ${func_name}
 }
+
 
 
 # Generic : git_selection
@@ -200,15 +213,39 @@ function git_selection() {
 }
 
 
+
+# Generic : git_selection
+#
+# 1.0.1 : Thursday, October  6 00:51:24 CEST 2016
+#
+# Require Global vairable
+# - SC_SELECTED_GIT_SRC  : Output
+#
+function git_selection() {
+
+    local func_name=${FUNCNAME[*]}
+    ini_func ${func_name}
+    
 #
 # Specific only for this script : Global vairables - readonly
 #
 declare -gr SUDO_CMD="sudo"
 declare -gr ANSIBLE_VARS="DEVENV_SSSD=false DEVENV_EEE=local DEVENV_CSS=true DEVENV_OPENXAL=false DEVENV_IPYTHON=false"
-declare -gr rsync_epics_log="/tmp/rsync-epics.log"
-declare -gr rsync_startup_log="/tmp/rsync-startup.log"
-declare -gr rsync_log_gz="/tmp/rsync-log.gz"
+declare -gr RSYNC_EPICS_LOG="/tmp/rsync-epics.log"
+declare -gr RSYNC_STARTUP_LOG="/tmp/rsync-startup.log"
+declare -gr ANSIBLE_LOG="/var/log/ansible.log"
 declare -g  GUI_STATUS=""
+
+
+function print_logrotate_rule() {
+
+    local logfile=${1};
+    local user=${2};
+    printf "%s {\nmissingok\nnotifempty\nsize 100k\nyearly\ncreate 0666 %s %s\n}" "${logfile}" "${user}" "${user}";
+    
+}
+
+ 
 
 # Specific : preparation
 #
@@ -220,9 +257,9 @@ function preparation() {
     
     local func_name=${FUNCNAME[*]}; ini_func ${func_name};
     checkstr ${SUDO_CMD};
-    
-    declare -r yum_pid="/var/run/yum.pid"
 
+    # yum, repository
+    declare -r yum_pid="/var/run/yum.pid"
     declare -r yum_repo_dir="/etc/yum.repos.d"
     declare -r rpmgpgkey_dir="/etc/pki/rpm-gpg/"
     declare -r repo_centos="CentOS-Base.repo"
@@ -230,6 +267,12 @@ function preparation() {
     declare -r rpmgpgkey_epel="RPM-GPG-KEY-EPEL-7"
     declare -r ess_repo_url="https://artifactory01.esss.lu.se/artifactory/list/devenv/repositories/repofiles"
 
+    # ansible 
+    local ansible_cfg="/etc/ansible/ansible.cfg";
+    local ansible_logrotate="/etc/logrotate.d/ansible";
+    local ansible_logrotate_rule=$(print_logrotate_rule "${ANSIBLE_LOG}" "${SC_IOCUSER}");
+    local ansilbe_log_init=$(printf "Note that ansible is not running currently,\nPlease wait for it, it will show up here soon....\nThis screen is updated every 2 seconds, to check the ansible log file in %s\n" "${ANSIBLE_LOG}");
+    
     # Somehow, yum is running due to PackageKit, so if so, kill it
     #
     if [[ -e ${yum_pid} ]]; then
@@ -251,9 +294,22 @@ function preparation() {
 		     -o ${yum_repo_dir}/${repo_epel}       ${ess_repo_url}/${repo_epel} \
 		     -o ${rpmgpgkey_dir}/${rpmgpgkey_epel} ${ess_repo_url}/${rpmgpgkey_epel}
         
-    # Install "git and ansible" for real works
+    # Install "git and ansible" and logrotate for real works
     # 
-    ${SUDO_CMD} yum -y install git ansible newt;
+    ${SUDO_CMD} yum -y install git ansible logrotate;
+
+    # Enable the ansible log its path is /var/log/ansible.log
+    ${SUDO_CMD} sed -i~ "s/#log_path =/log_path =/g" "${ansible_cfg}";
+
+    # the initial log message
+    printf_tee "${ansilbe_log_init}" "${ANSIBLE_LOG}";
+
+    # change the permission 
+    ${SUDO_CMD} chmod 666 ${ANSIBLE_LOG};
+    
+    # Enable the logrotate for ansible log
+    
+    printf_tee "${ansible_logrotate_rule}" "${ansible_logrotate}";
 
     end_func ${func_name};
 }
@@ -270,7 +326,8 @@ function is-active-ui() {
 	printf "\n User Interface was detected, \nexecute the monitoring terminal for the EEE Rsync status and install the required packages for them.\n\n";
 	
 	${SUDO_CMD} yum -y install xterm xorg-x11-fonts-misc
-	nice xterm -title "EEE rsync status" -geometry 140x12+0+0 -e "nice watch -n 2 tail -n 10 ${rsync_epics_log}"&
+	nice xterm -title "EEE rsync status" -geometry 140x15+0+0   -e "nice watch -n 2 tail -n 10 ${RSYNC_EPICS_LOG}"&
+	nice xterm -title "ANSIBLE   status" -geometry 140x15+0+190 -e "nice watch -n 2 tail -n 10 ${ANSIBLE_LOG}"&
     else
 	# If a system has the NO GUI, it returns "inactive"
 	printf "\n NO User Interface was detected, install the required packages to work around ansible errors\n\n";
@@ -328,7 +385,7 @@ function yum_extra(){
     end_func ${func_name}
 }
 
-
+ 
 function update_eeelocal_parameters() {
 
     local func_name=${FUNCNAME[*]}; ini_func ${func_name};
@@ -339,9 +396,13 @@ function update_eeelocal_parameters() {
     # Replace the default user (ess) with the user who executes this script (whoami)
     printf "... Replace the default user (ess) with \"%s\" in %s\n\n" "${SC_IOCUSER}" "${target_dir}/tasks/main.yml";
 
-    # " is needed to transfer bash variable into sed
-    sed -i~ "s/=ess/=${SC_IOCUSER}/g" "${target_dir}/tasks/main.yml"
+    # It is the bad idea to have the same "ess" in everywhere
 
+    # is needed to transfer bash variable into sed
+    sed -i~ "s/name=ess/name=${SC_IOCUSER}/g"   "${target_dir}/tasks/main.yml"
+    sed -i  "s/a user ess/a user ${SC_IOCUSER}/g" "${target_dir}/tasks/main.yml"
+    sed -i  "s/owner=ess/owner=${SC_IOCUSER}/g"   "${target_dir}/tasks/main.yml"
+    
     # Replace the default user, and add log files for rsync-epics.service and rsync-startup.service
     printf "... Replace the default user (ess) with \"%s\" in %s \n\n... Add logfiles in %s\n" \
 	   "${SC_IOCUSER}" "${target_dir}/files/rsync-{epics,startup}.service" \
@@ -355,38 +416,50 @@ function update_eeelocal_parameters() {
     #
     local rsync_general_option="--recursive --links --perms --times --timeout 120 --exclude='.git/' --exclude='SL6-x86_64/' --exclude='*eldk*/' ";
 
-    local rsync_epics_option="${rsync_general_option} --log-file=${rsync_epics_log} ";
-    local rsync_startup_option="${rsync_general_option} --log-file=${rsync_startup_log} ";
+    local rsync_epics_option="${rsync_general_option} --log-file=${RSYNC_EPICS_LOG} ";
+    local rsync_startup_option="${rsync_general_option} --log-file=${RSYNC_STARTUP_LOG} ";
 
     #
     # Rsync appends its log the existent log file, so I copy them in different time
     # Do we need to track down?
 
-    # cp ${rsync_epics_log} ${rsync_epics_log}_${SC_LOGDATE}
-    # cp ${rsync_startup_log} ${rsync_startup_log}_${SC_LOGDATE}
+    # cp ${RSYNC_EPICS_LOG} ${RSYNC_EPICS_LOG}_${SC_LOGDATE}
+    # cp ${RSYNC_STARTUP_LOG} ${RSYNC_STARTUP_LOG}_${SC_LOGDATE}
 
     # # Nullify them 
     # # 
-    #cat /dev/null > ${rsync_epics_log};
-    #cat /dev/null > ${rsync_startup_log};
+    #cat /dev/null > ${RSYNC_EPICS_LOG};
+    #cat /dev/null > ${RSYNC_STARTUP_LOG};
 
+   # Enable the logrotate for ansible log
+
+    declare -r rsync_epics_logrotate="/etc/logrotate.d/rsync_epics";
+    declare -r rsync_startup_logrotate="/etc/logrotate.d/rsync_startup";
+
+    declare rsync_epics_logrotate_rule=$(print_logrotate_rule "${RSYNC_EPICS_LOG}" "${SC_IOCUSER}");
+    declare rsync_startup_logrotate_rule=$(print_logrotate_rule "${RSYNC_STARTUP_LOG}" "${SC_IOCUSER}");
+        
+    printf_tee "${rsync_epics_logrotate_rule}"   "${rsync_epics_logrotate}";
+    printf_tee "${rsync_startup_logrotate_rule}" "${rsync_startup_logrotate}";
+    
+    
     # Add some information before showing actual log information of RSYNC
     # Only valid at the first instalation
     #
-    cat > ${rsync_epics_log} <<EOF
+    cat > ${RSYNC_EPICS_LOG} <<EOF
 
 Note that rsync-epics.servive is not running currently,
 Please wait for it, it will show up here soooon......
 This screen is updated every 2 seconds, to check the rsync log file
-in ${rsync_epics_log}. 
+in ${RSYNC_EPICS_LOG}. 
 
 EOF
-    cat > ${rsync_startup_log} <<EOF
+    cat > ${RSYNC_STARTUP_LOG} <<EOF
 
 Note that rsync-startup.servive is not running currently,
 Please wait for it, it will show up here soooon......
 This screen is updated every 2 seconds, to check the rsync log file
-in ${rsync_epics_log}. 
+in ${RSYNC_EPICS_LOG}. 
 
 EOF
     cat > ${target_dir}/files/rsync-epics.service <<EOF
@@ -450,12 +523,10 @@ SC_GIT_SRC_DIR=${SC_TOP}/${SC_GIT_SRC_NAME}
 git_clone
 #
 #
-
 declare -i tag_cnt=$1;
 pushd ${SC_GIT_SRC_DIR}
 #
 #
-
 git_selection ${tag_cnt};
 
 update_eeelocal_parameters
@@ -465,18 +536,19 @@ ini_func "Ansible Playbook"
 ${SUDO_CMD} ansible-playbook -i "localhost," -c local devenv.yml --extra-vars="${ANSIBLE_VARS}"
 end_func "Ansible Playbook"
 #
-#
+
 popd
 
 
-#
-#
-#yum_gui
+# #
+# #
+# #yum_gui
 yum_extra
 #
 
 if [[ ${GUI_STATUS} = "inactive" ]]; then
-    printf "\nNO User Interface. \nTherefore, one should wait for rsync EPICS processe \nin order to check the ESS EPICS Environment.\n tail -n 10 -f ${rsync_epics_log}\n\n";
+    printf "\n>>>>>>>> NO USER INTERFACE  <<<<<<<< \n* One should wait for rsync EPICS processe \n  in order to check the ESS EPICS Environment.\n  tail -n 10 -f ${RSYNC_EPICS_LOG}\n\n";
+     printf "* One can check the ansible log ${ANSIBLE_LOG}\n  whether the ansible returns OK or not. \n  tail -f ${ANSIBLE_LOG}\n\n";
 fi
 
      
