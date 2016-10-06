@@ -20,7 +20,7 @@
 # Author : Jeong Han Lee
 # email  : han.lee@esss.se
 # Date   : 
-# version : 0.9.3 
+# version : 0.9.4 
 #
 # http://www.gnu.org/software/bash/manual/bashref.html#Bash-Builtins
 
@@ -92,7 +92,11 @@ function git_clone() {
     end_func ${func_name}
 }
 
+
+
 # Generic : git_selection
+#
+# 1.0.1 : Thursday, October  6 00:51:24 CEST 2016
 #
 # Require Global vairable
 # - SC_SELECTED_GIT_SRC  : Output
@@ -130,8 +134,10 @@ function git_selection() {
     # do I need this? 
     # selected_one=${line/.*}
 
+    # Without selection number, type [ENTER], 0 is selected as default.
+    #
     selected_one=${line}
-
+    
     let "list_size = ${#git_src_list[@]} - 1"
     
     if [[ "$selected_one" -gt "$list_size" ]]; then
@@ -167,7 +173,6 @@ function git_selection() {
     end_func ${func_name}
  
 }
-
 
 #
 # Specific only for this script : Global vairables - readonly
@@ -308,9 +313,13 @@ function update_eeelocal_parameters() {
     # Replace the default user (ess) with the user who executes this script (whoami)
     printf "... Replace the default user (ess) with \"%s\" in %s\n\n" "${SC_IOCUSER}" "${target_dir}/tasks/main.yml";
 
-    # " is needed to transfer bash variable into sed
-    sed -i~ "s/=ess/=${SC_IOCUSER}/g" "${target_dir}/tasks/main.yml"
+    # It is the bad idea to have the same "ess" in everywhere
 
+    # is needed to transfer bash variable into sed
+    sed -i~ "s/name=ess/name=${SC_IOCUSER}/g"   "${target_dir}/tasks/main.yml"
+    sed -i  "s/a user ess/a user ${USERNAME}/g" "${target_dir}/tasks/main.yml"
+    sed -i  "s/owner=ess/owner=${USERNAME}/g"   "${target_dir}/tasks/main.yml"
+    
     # Replace the default user, and add log files for rsync-epics.service and rsync-startup.service
     printf "... Replace the default user (ess) with \"%s\" in %s \n\n... Add logfiles in %s\n" \
 	   "${SC_IOCUSER}" "${target_dir}/files/rsync-{epics,startup}.service" \
@@ -389,24 +398,24 @@ EOF
 
 
 
-${SUDO_CMD} -v
+# ${SUDO_CMD} -v
 
-#
-# This "keep sudo" functionality
-# doesn't work in the no-gui environment (minimal iso and minimal selection)
-# One needs to type ones password twice during the entire setup procedure
-#
+# #
+# # This "keep sudo" functionality
+# # doesn't work in the no-gui environment (minimal iso and minimal selection)
+# # One needs to type ones password twice during the entire setup procedure
+# #
 
-while [ true ];
-do
-    ${SUDO_CMD} -n /bin/true;
-    sleep 60;
-    kill -0 "$$" || exit;
-done 2>/dev/null &
+# while [ true ];
+# do
+#     ${SUDO_CMD} -n /bin/true;
+#     sleep 60;
+#     kill -0 "$$" || exit;
+# done 2>/dev/null &
 
 
 
-preparation
+# preparation
 
 #
 #
@@ -427,23 +436,23 @@ git_selection
 update_eeelocal_parameters
 is-active-ui
 
-ini_func "Ansible Playbook"
-${SUDO_CMD} ansible-playbook -i "localhost," -c local devenv.yml --extra-vars="${ANSIBLE_VARS}"
-end_func "Ansible Playbook"
-#
+# ini_func "Ansible Playbook"
+# ${SUDO_CMD} ansible-playbook -i "localhost," -c local devenv.yml --extra-vars="${ANSIBLE_VARS}"
+# end_func "Ansible Playbook"
+# #
 #
 popd
 
 
-#
-#
-#yum_gui
-yum_extra
-#
+# #
+# #
+# #yum_gui
+# yum_extra
+# #
 
-if [[ ${GUI_STATUS} = "inactive" ]]; then
-    printf "\nNO User Interface. \nTherefore, one should wait for rsync EPICS processe \nin order to check the ESS EPICS Environment.\n tail -n 10 -f ${rsync_epics_log}\n\n";
-fi
+# if [[ ${GUI_STATUS} = "inactive" ]]; then
+#     printf "\nNO User Interface. \nTherefore, one should wait for rsync EPICS processe \nin order to check the ESS EPICS Environment.\n tail -n 10 -f ${rsync_epics_log}\n\n";
+# fi
 
      
 exit
