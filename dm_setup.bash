@@ -201,9 +201,8 @@ function print_logrotate_rule() {
 
     local logfile=${1};
     local user=${2};
-    printf "%s {\nmissingok\nnotifempty\nsize 100k\nyearly\ncreate 0666 %s %s\n}" \
-	   "${logfile}" \
-	   "${user}" "${user}");
+    printf "%s {\nmissingok\nnotifempty\nsize 100k\nyearly\ncreate 0666 %s %s\n}" "${logfile}" "${user}" "${user}";
+    
 }
 
  
@@ -392,9 +391,9 @@ function update_eeelocal_parameters() {
 
     declare -r rsync_epics_logrotate="/etc/logrotate.d/rsync_epics";
     declare -r rsync_startup_logrotate="/etc/logrotate.d/rsync_startup";
-    
-    local rsync_epics_logrotate_rule=$(print_logrotate_rule "${RSYNC_EPICS_LOG}" "${SC_IOCUSER}");
-    local rsync_startup_logrotate_rule=$(printf_logrotate_rule "${RSYNC_STARTUP_LOG}" "${SC_IOCUSER}");
+
+    declare rsync_epics_logrotate_rule=$(print_logrotate_rule "${RSYNC_EPICS_LOG}" "${SC_IOCUSER}");
+    declare rsync_startup_logrotate_rule=$(print_logrotate_rule "${RSYNC_STARTUP_LOG}" "${SC_IOCUSER}");
         
     printf_tee "${rsync_epics_logrotate_rule}"   "${rsync_epics_logrotate}";
     printf_tee "${rsync_startup_logrotate_rule}" "${rsync_startup_logrotate}";
