@@ -151,9 +151,12 @@ function git_selection() {
     # 	# fatal: No tags can describe '7fce903a82d47dec92012664648cacebdacd88e1'.
     # 	# Try --always, or create some tags.
 
-    git_src_list+=($(git tag -l --sort=-refname  | head -n${n_tags}))
+    # doesn't work for CentOS7
+    #    git_src_list+=($(git tag -l --sort=-refname  | head -n${n_tags}))
     # fi
-    
+
+
+    git_src_list+=($(git tag -l | sort -r | head -n${n_tags}))
     
     for tag in "${git_src_list[@]}"
     do
