@@ -231,7 +231,7 @@ function preparation() {
     local ansible_cfg="/etc/ansible/ansible.cfg";
     local ansible_logrotate="/etc/logrotate.d/ansible";
     local ansible_logrotate_rule=$(print_logrotate_rule "${ANSIBLE_LOG}" "${SC_IOCUSER}");
-    local ansilbe_log_init=$(printf "Note that ansible is not running currently,\nPlease wait for it, it will show up here soon....\nThis screen is updated every 2 seconds, to check the ansible log file in %s" "${ANSIBLE_LOG}\n");
+    local ansilbe_log_init=$(printf "Note that ansible is not running currently,\nPlease wait for it, it will show up here soon....\nThis screen is updated every 2 seconds, to check the ansible log file in %s\n" "${ANSIBLE_LOG}");
     
     # Somehow, yum is running due to PackageKit, so if so, kill it
     #
@@ -286,8 +286,8 @@ function is-active-ui() {
 	printf "\n User Interface was detected, \nexecute the monitoring terminal for the EEE Rsync status and install the required packages for them.\n\n";
 	
 	${SUDO_CMD} yum -y install xterm xorg-x11-fonts-misc
-	nice xterm -title "EEE rsync status" -geometry 140x12+0+0  -e "nice watch -n 2 tail -n 10 ${RSYNC_EPICS_LOG}"&
-	nice xterm -title "ANSIBLE   status" -geometry 140x12+0+13 -e "nice watch -n 2 tail -n 10 ${ANSIBLE_LOG}"&
+	nice xterm -title "EEE rsync status" -geometry 140x12+0+0   -e "nice watch -n 2 tail -n 10 ${RSYNC_EPICS_LOG}"&
+	nice xterm -title "ANSIBLE   status" -geometry 140x12+0+184 -e "nice watch -n 2 tail -n 10 ${ANSIBLE_LOG}"&
     else
 	# If a system has the NO GUI, it returns "inactive"
 	printf "\n NO User Interface was detected, install the required packages to work around ansible errors\n\n";
