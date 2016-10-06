@@ -181,7 +181,7 @@ declare -gr SUDO_CMD="sudo"
 declare -gr ANSIBLE_VARS="DEVENV_SSSD=false DEVENV_EEE=local DEVENV_CSS=true DEVENV_OPENXAL=false DEVENV_IPYTHON=false"
 declare -gr rsync_epics_log="/tmp/rsync-epics.log"
 declare -gr rsync_startup_log="/tmp/rsync-startup.log"
-declare -gr rsync_log_gz="/tmp/rsync-log.gz"
+declare -gr ansible_log="/var/log/ansible.log"
 declare -g  GUI_STATUS=""
 
 # Specific : preparation
@@ -204,6 +204,10 @@ function preparation() {
     declare -r rpmgpgkey_epel="RPM-GPG-KEY-EPEL-7"
     declare -r ess_repo_url="https://artifactory01.esss.lu.se/artifactory/list/devenv/repositories/repofiles"
 
+
+    declare -r ansible_cfg="/etc/ansible/ansible.cfg";
+    declare -r ansible_logrotate="/etc/logrotate.d/ansible";
+    
     # Somehow, yum is running due to PackageKit, so if so, kill it
     #
     if [[ -e ${yum_pid} ]]; then
@@ -225,10 +229,26 @@ function preparation() {
 		     -o ${yum_repo_dir}/${repo_epel}       ${ess_repo_url}/${repo_epel} \
 		     -o ${rpmgpgkey_dir}/${rpmgpgkey_epel} ${ess_repo_url}/${rpmgpgkey_epel}
         
-    # Install "git and ansible" for real works
+    # Install "git and ansible" and logrotate for real works
     # 
-    ${SUDO_CMD} yum -y install git ansible;
+    ${SUDO_CMD} yum -y install git ansible logrotate;
 
+    # Enable the ansible log
+    ${SUDO_CMD} sed -i~ "s/#log_path =/log_path =/g"   "${ansible_cfg}";
+
+    # Enable the logrotate for ansible log
+    
+    ${SUDO_CMD} cat > ${ansible_logrotate} <<EOF
+[Unit]
+${ansible_cfg} \{
+   missingok
+   notifempty
+   size 100k
+   yearly
+   create 0666 ${SC_IOCUSER} ${SC_IOCUSER}
+\}
+EOF
+    
     end_func ${func_name};
 }
 
@@ -348,6 +368,34 @@ function update_eeelocal_parameters() {
     #cat /dev/null > ${rsync_epics_log};
     #cat /dev/null > ${rsync_startup_log};
 
+   # Enable the logrotate for ansible log
+
+    declare -r rsync_epics_logrotate="/etc/logrotate.d/rsync_epics";
+    declare -r rsync_startup_logrotate="/etc/logrotate.d/rsync_startup";
+    
+    
+    ${SUDO_CMD} cat > ${rsync_epics_logrotate} <<EOF
+${rsync_epics_log} \{
+   missingok
+   notifempty
+   size 100k
+   yearly
+   create 0666 ${SC_IOCUSER} ${SC_IOCUSER}
+\}
+EOF
+
+       
+    ${SUDO_CMD} cat > ${rsync_startup_logrotate} <<EOF
+${rsync_startup_log} \{
+   missingok
+   notifempty
+   size 100k
+   yearly
+   create 0666 ${SC_IOCUSER} ${SC_IOCUSER}
+\}
+EOF
+    
+    
     # Add some information before showing actual log information of RSYNC
     # Only valid at the first instalation
     #
