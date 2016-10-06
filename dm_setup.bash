@@ -398,24 +398,24 @@ EOF
 
 
 
-# ${SUDO_CMD} -v
+${SUDO_CMD} -v
 
-# #
-# # This "keep sudo" functionality
-# # doesn't work in the no-gui environment (minimal iso and minimal selection)
-# # One needs to type ones password twice during the entire setup procedure
-# #
+#
+# This "keep sudo" functionality
+# doesn't work in the no-gui environment (minimal iso and minimal selection)
+# One needs to type ones password twice during the entire setup procedure
+#
 
-# while [ true ];
-# do
-#     ${SUDO_CMD} -n /bin/true;
-#     sleep 60;
-#     kill -0 "$$" || exit;
-# done 2>/dev/null &
+while [ true ];
+do
+    ${SUDO_CMD} -n /bin/true;
+    sleep 60;
+    kill -0 "$$" || exit;
+done 2>/dev/null &
 
 
 
-# preparation
+preparation
 
 #
 #
@@ -436,23 +436,23 @@ git_selection
 update_eeelocal_parameters
 is-active-ui
 
-# ini_func "Ansible Playbook"
-# ${SUDO_CMD} ansible-playbook -i "localhost," -c local devenv.yml --extra-vars="${ANSIBLE_VARS}"
-# end_func "Ansible Playbook"
-# #
+ini_func "Ansible Playbook"
+${SUDO_CMD} ansible-playbook -i "localhost," -c local devenv.yml --extra-vars="${ANSIBLE_VARS}"
+end_func "Ansible Playbook"
 #
+
 popd
 
 
 # #
 # #
 # #yum_gui
-# yum_extra
-# #
+yum_extra
+#
 
-# if [[ ${GUI_STATUS} = "inactive" ]]; then
-#     printf "\nNO User Interface. \nTherefore, one should wait for rsync EPICS processe \nin order to check the ESS EPICS Environment.\n tail -n 10 -f ${rsync_epics_log}\n\n";
-# fi
+if [[ ${GUI_STATUS} = "inactive" ]]; then
+    printf "\nNO User Interface. \nTherefore, one should wait for rsync EPICS processe \nin order to check the ESS EPICS Environment.\n tail -n 10 -f ${rsync_epics_log}\n\n";
+fi
 
      
 exit
