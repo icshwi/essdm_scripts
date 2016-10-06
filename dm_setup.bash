@@ -337,8 +337,8 @@ function update_eeelocal_parameters() {
 
     # is needed to transfer bash variable into sed
     sed -i~ "s/name=ess/name=${SC_IOCUSER}/g"   "${target_dir}/tasks/main.yml"
-    sed -i  "s/a user ess/a user ${USERNAME}/g" "${target_dir}/tasks/main.yml"
-    sed -i  "s/owner=ess/owner=${USERNAME}/g"   "${target_dir}/tasks/main.yml"
+    sed -i  "s/a user ess/a user ${SC_IOCUSER}/g" "${target_dir}/tasks/main.yml"
+    sed -i  "s/owner=ess/owner=${SC_IOCUSER}/g"   "${target_dir}/tasks/main.yml"
     
     # Replace the default user, and add log files for rsync-epics.service and rsync-startup.service
     printf "... Replace the default user (ess) with \"%s\" in %s \n\n... Add logfiles in %s\n" \
