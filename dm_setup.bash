@@ -136,10 +136,9 @@ function git_selection() {
     fi
 
     git_src_list+=("master")
-    # git_tags=$(git describe --tags `git rev-list --tags --max-count=${n_tags}`);
-    
-    # git_exitstatus=$?
 
+    # git_tags=$(git describe --tags `git rev-list --tags --max-count=${n_tags}`);
+    # git_exitstatus=$?
     # if [ $git_exitstatus = 0 ]; then
     # 	#
     # 	# (${}) and ($(command))  are important to separate output as an indiviaul arrar
@@ -150,11 +149,9 @@ function git_selection() {
     # 	#
     # 	# fatal: No tags can describe '7fce903a82d47dec92012664648cacebdacd88e1'.
     # 	# Try --always, or create some tags.
-
     # doesn't work for CentOS7
     #    git_src_list+=($(git tag -l --sort=-refname  | head -n${n_tags}))
     # fi
-
 
     git_src_list+=($(git tag -l | sort -r | head -n${n_tags}))
     
