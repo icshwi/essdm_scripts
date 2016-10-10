@@ -154,6 +154,7 @@ function git_selection() {
     # fi
 
     git_src_list+=($(git tag -l | sort -r | head -n${n_tags}))
+
     
     for tag in "${git_src_list[@]}"
     do
@@ -212,6 +213,19 @@ function git_selection() {
 }
 
 
+
+# Generic : git_selection
+#
+# 1.0.1 : Thursday, October  6 00:51:24 CEST 2016
+#
+# Require Global vairable
+# - SC_SELECTED_GIT_SRC  : Output
+#
+function git_selection() {
+
+    local func_name=${FUNCNAME[*]}
+    ini_func ${func_name}
+    
 #
 # Specific only for this script : Global vairables - readonly
 #
@@ -417,6 +431,7 @@ function update_eeelocal_parameters() {
     #cat /dev/null > ${RSYNC_EPICS_LOG};
     #cat /dev/null > ${RSYNC_STARTUP_LOG};
 
+
    # Enable the logrotate for ansible log
 
     declare -r rsync_epics_logrotate="/etc/logrotate.d/rsync_epics";
@@ -510,9 +525,11 @@ SC_GIT_SRC_DIR=${SC_TOP}/${SC_GIT_SRC_NAME}
 git_clone
 #
 #
+declare -i tag_cnt=$1;
 pushd ${SC_GIT_SRC_DIR}
 #
 #
+
 git_selection  ${tag_cnt};
 
 update_eeelocal_parameters
