@@ -154,7 +154,6 @@ function git_selection() {
     # fi
 
     git_src_list+=($(git tag -l | sort -r | head -n${n_tags}))
-
     
     for tag in "${git_src_list[@]}"
     do
@@ -213,19 +212,6 @@ function git_selection() {
 }
 
 
-
-# Generic : git_selection
-#
-# 1.0.1 : Thursday, October  6 00:51:24 CEST 2016
-#
-# Require Global vairable
-# - SC_SELECTED_GIT_SRC  : Output
-#
-function git_selection() {
-
-    local func_name=${FUNCNAME[*]}
-    ini_func ${func_name}
-    
 #
 # Specific only for this script : Global vairables - readonly
 #
@@ -306,7 +292,6 @@ function preparation() {
 
     # change the permission 
     ${SUDO_CMD} chmod 666 ${ANSIBLE_LOG};
-    
     # Enable the logrotate for ansible log
     
     printf_tee "${ansible_logrotate_rule}" "${ansible_logrotate}";
