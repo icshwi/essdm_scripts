@@ -105,10 +105,9 @@ function git_clone() {
 }
 
 
-
 # Generic : git_selection
 #
-# 1.0.2 : Thursday, October  6 15:05:40 CEST 2016
+# 1.0.3 : Thursday, October  6 15:34:12 CEST 2016
 #
 # Require Global vairable
 # - SC_SELECTED_GIT_SRC  : Output
@@ -137,24 +136,25 @@ function git_selection() {
     fi
 
     git_src_list+=("master")
-    git_tags=$(git describe --tags `git rev-list --tags --max-count=${n_tags}`);
-    
-    git_exitstatus=$?
 
-    if [ $git_exitstatus = 0 ]; then
-	#
-	# (${}) and ($(command))  are important to separate output as an indiviaul arrar
-	#
-	git_src_list+=(${git_tags});
-    else
-	# In case, No tags can describe, use git tag instead of git describe
-	#
-	# fatal: No tags can describe '7fce903a82d47dec92012664648cacebdacd88e1'.
-	# Try --always, or create some tags.
+    # git_tags=$(git describe --tags `git rev-list --tags --max-count=${n_tags}`);
+    # git_exitstatus=$?
+    # if [ $git_exitstatus = 0 ]; then
+    # 	#
+    # 	# (${}) and ($(command))  are important to separate output as an indiviaul arrar
+    # 	#
+    # 	git_src_list+=(${git_tags});
+    # else
+    # 	# In case, No tags can describe, use git tag instead of git describe
+    # 	#
+    # 	# fatal: No tags can describe '7fce903a82d47dec92012664648cacebdacd88e1'.
+    # 	# Try --always, or create some tags.
+    # doesn't work for CentOS7
+    #    git_src_list+=($(git tag -l --sort=-refname  | head -n${n_tags}))
+    # fi
 
-	git_src_list+=($(git tag -l --sort=-refname  | head -n${n_tags}))
-    fi
-    
+    git_src_list+=($(git tag -l | sort -r | head -n${n_tags}))
+
     
     for tag in "${git_src_list[@]}"
     do
@@ -431,6 +431,7 @@ function update_eeelocal_parameters() {
     #cat /dev/null > ${RSYNC_EPICS_LOG};
     #cat /dev/null > ${RSYNC_STARTUP_LOG};
 
+
    # Enable the logrotate for ansible log
 
     declare -r rsync_epics_logrotate="/etc/logrotate.d/rsync_epics";
@@ -508,6 +509,7 @@ do
     kill -0 "$$" || exit;
 done 2>/dev/null &
 
+declare -i tag_cnt=$1;
 
 
 preparation
@@ -527,7 +529,8 @@ declare -i tag_cnt=$1;
 pushd ${SC_GIT_SRC_DIR}
 #
 #
-git_selection ${tag_cnt};
+
+git_selection  ${tag_cnt};
 
 update_eeelocal_parameters
 is-active-ui
