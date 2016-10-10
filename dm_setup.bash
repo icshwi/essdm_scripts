@@ -107,35 +107,32 @@ function git_clone() {
 
 # Generic : git_selection
 #
-# 1.0.3 : Thursday, October  6 15:34:12 CEST 2016
+# 1.1.0 : Monday, October 10 09:23:24 CEST 2016
 #
 # Require Global vairable
 # - SC_SELECTED_GIT_SRC  : Output
 #
 function git_selection() {
 
-    local func_name=${FUNCNAME[*]}; ini_func ${func_name}
+    local func_name=${FUNCNAME[*]}; ini_func ${func_name};
 
-    local git_ckoutcmd=""
-    local checked_git_src=""
+    local git_ckoutcmd="";
+    local checked_git_src="";
 
-    
-    declare -i index=0
-    declare -i master_index=0
-    declare -i list_size=0
-    declare -i selected_one=0
-    declare -a git_src_list=()
-
+    declare -i index=0;
+    declare -i master_index=0;
+    declare -i list_size=0;
+    declare -i selected_one=0;
+    declare -a git_src_list=();
     
     local n_tags=${1};
 
     # no set n_tags, set default 10
-    
     if [[ ${n_tags} -eq 0 ]]; then
 	n_tags=10;
     fi
 
-    git_src_list+=("master")
+    git_src_list+=("master");
 
     # git_tags=$(git describe --tags `git rev-list --tags --max-count=${n_tags}`);
     # git_exitstatus=$?
@@ -153,79 +150,67 @@ function git_selection() {
     #    git_src_list+=($(git tag -l --sort=-refname  | head -n${n_tags}))
     # fi
 
-    git_src_list+=($(git tag -l | sort -r | head -n${n_tags}))
+    git_src_list+=($(git tag -l | sort -r | head -n${n_tags}));
 
     
     for tag in "${git_src_list[@]}"
     do
-	printf "%2s: git src %34s\n" "$index" "$tag"
-	let "index = $index + 1"
+	printf "%2s: git src %34s\n" "$index" "$tag";
+	let "index = $index + 1";
     done
     
-    echo -n "Select master or one of tags which can be built, followed by [ENTER]:"
-
+    echo -n "Select master or one of tags which can be built, followed by [ENTER]: "
+    
     # don't wait for 3 characters 
     # read -e -n 2 line
     read -e line
-   
+    
     # convert a string to an integer?
     # do I need this? 
     # selected_one=${line/.*}
 
     # Without selection number, type [ENTER], 0 is selected as default.
     #
-    selected_one=${line}
-    
-    let "list_size = ${#git_src_list[@]} - 1"
+    selected_one=${line};
+    let "list_size = ${#git_src_list[@]} - 1";
     
     if [[ "$selected_one" -gt "$list_size" ]]; then
-	printf "\n>>> Please select one number smaller than %s\n" "${list_size}"
-	exit 1;
+	printf "\n>>> Please select one number smaller than %s\n" "${list_size}";
+	exit 1
     fi
     if [[ "$selected_one" -lt 0 ]]; then
-	printf "\n>>> Please select one number larger than 0\n" 
-	exit 1;
+	printf "\n>>> Please select one number larger than 0\n"; 
+	exit 1
     fi
 
-    SC_SELECTED_GIT_SRC="$(tr -d ' ' <<< ${git_src_list[line]})"
+    SC_SELECTED_GIT_SRC="$(tr -d ' ' <<< ${git_src_list[line]})";
     
-    printf "\n>>> Selected %34s --- \n" "${SC_SELECTED_GIT_SRC}"
- 
-    echo ""
+    printf "\n>>> Selected %34s --- \n" "${SC_SELECTED_GIT_SRC}\n";
+
     if [ "$selected_one" -ne "$master_index" ]; then
-	git_ckoutcmd="git checkout tags/${SC_SELECTED_GIT_SRC}"
-	$git_ckoutcmd
-	checked_git_src="$(git describe --exact-match --tags)"
-	checked_git_src="$(tr -d ' ' <<< ${checked_git_src})"
 	
-	printf "\n>>> Selected : %s --- \n>>> Checkout : %s --- \n" "${SC_SELECTED_GIT_SRC}" "${checked_git_src}"
+	git_ckoutcmd="git checkout tags/${SC_SELECTED_GIT_SRC}";
+	$git_ckoutcmd;
+
+	checked_git_src="$(git describe --exact-match --tags)";
+	checked_git_src="$(tr -d ' ' <<< ${checked_git_src})";
+	
+	printf "\n>>> Selected : %s --- \n>>> Checkout : %s --- \n" "${SC_SELECTED_GIT_SRC}" "${checked_git_src}";
 	
 	if [ "${SC_SELECTED_GIT_SRC}" != "${checked_git_src}" ]; then
-	    echo "Something is not right, please check your git reposiotry"
+	    printf "Something is not right, please check your git reposiotry\n";
 	    exit 1
 	fi
     else
-	git_ckoutcmd="git checkout ${SC_SELECTED_GIT_SRC}"
-	$git_ckoutcmd
+	git_ckoutcmd="git checkout ${SC_SELECTED_GIT_SRC}";
+	$git_ckoutcmd;
     fi
-    end_func ${func_name}
- 
+    
+    end_func ${func_name};
+    
 }
 
 
-
-# Generic : git_selection
-#
-# 1.0.1 : Thursday, October  6 00:51:24 CEST 2016
-#
-# Require Global vairable
-# - SC_SELECTED_GIT_SRC  : Output
-#
-function git_selection() {
-
-    local func_name=${FUNCNAME[*]}
-    ini_func ${func_name}
-    
 #
 # Specific only for this script : Global vairables - readonly
 #
@@ -245,7 +230,7 @@ function print_logrotate_rule() {
     
 }
 
- 
+
 
 # Specific : preparation
 #
@@ -291,9 +276,9 @@ function preparation() {
     # Download the ESS customized repository files and its RPM GPG KEY file
     #
     ${SUDO_CMD} curl -o ${yum_repo_dir}/${repo_centos}     ${ess_repo_url}/CentOS-Vault-7.1.1503.repo \
-		     -o ${yum_repo_dir}/${repo_epel}       ${ess_repo_url}/${repo_epel} \
-		     -o ${rpmgpgkey_dir}/${rpmgpgkey_epel} ${ess_repo_url}/${rpmgpgkey_epel}
-        
+		-o ${yum_repo_dir}/${repo_epel}       ${ess_repo_url}/${repo_epel} \
+		-o ${rpmgpgkey_dir}/${rpmgpgkey_epel} ${ess_repo_url}/${rpmgpgkey_epel}
+    
     # Install "git and ansible" and logrotate for real works
     # 
     ${SUDO_CMD} yum -y install git ansible logrotate;
@@ -352,7 +337,7 @@ function yum_gui(){
     local func_name=${FUNCNAME[*]}
 
     ini_func ${func_name}
-	
+    
     checkstr ${SUDO_CMD}
 
 
@@ -362,7 +347,7 @@ function yum_gui(){
 
     ${SUDO_CMD} systemctl disable gdm.service
     ${SUDO_CMD} systemctl enable lightdm.service
- 
+    
     end_func ${func_name}  
 }
 
@@ -373,7 +358,7 @@ function yum_extra(){
     local func_name=${FUNCNAME[*]}
 
     ini_func ${func_name}
-	
+    
     checkstr ${SUDO_CMD}
 
     ${SUDO_CMD} yum -y install emacs screen
@@ -381,11 +366,11 @@ function yum_extra(){
     # Now it is safe to run update by an user, let them do this job.
     
     ${SUDO_CMD} yum -y update
- 
+    
     end_func ${func_name}
 }
 
- 
+
 function update_eeelocal_parameters() {
 
     local func_name=${FUNCNAME[*]}; ini_func ${func_name};
@@ -409,7 +394,7 @@ function update_eeelocal_parameters() {
 	   "/tmp/rsync-{epics,startup}.log";
 
     
-   
+    
     local rsync_server="rsync://owncloud01.esss.lu.se:80";
 
     # Does CentOS EEE need ELDK EEE stuffs?
@@ -432,14 +417,14 @@ function update_eeelocal_parameters() {
     #cat /dev/null > ${RSYNC_STARTUP_LOG};
 
 
-   # Enable the logrotate for ansible log
+    # Enable the logrotate for ansible log
 
     declare -r rsync_epics_logrotate="/etc/logrotate.d/rsync_epics";
     declare -r rsync_startup_logrotate="/etc/logrotate.d/rsync_startup";
 
-    declare rsync_epics_logrotate_rule=$(print_logrotate_rule "${RSYNC_EPICS_LOG}" "${SC_IOCUSER}");
+    declare rsync_epics_logrotate_rule=$(print_logrotate_rule   "${RSYNC_EPICS_LOG}"   "${SC_IOCUSER}");
     declare rsync_startup_logrotate_rule=$(print_logrotate_rule "${RSYNC_STARTUP_LOG}" "${SC_IOCUSER}");
-        
+    
     printf_tee "${rsync_epics_logrotate_rule}"   "${rsync_epics_logrotate}";
     printf_tee "${rsync_startup_logrotate_rule}" "${rsync_startup_logrotate}";
     
@@ -526,12 +511,11 @@ git_clone
 #
 #
 declare -i tag_cnt=$1;
+
 pushd ${SC_GIT_SRC_DIR}
 #
 #
-
 git_selection  ${tag_cnt};
-
 update_eeelocal_parameters
 is-active-ui
 
@@ -551,9 +535,9 @@ yum_extra
 
 if [[ ${GUI_STATUS} = "inactive" ]]; then
     printf "\n>>>>>>>> NO USER INTERFACE  <<<<<<<< \n* One should wait for rsync EPICS processe \n  in order to check the ESS EPICS Environment.\n  tail -n 10 -f ${RSYNC_EPICS_LOG}\n\n";
-     printf "* One can check the ansible log ${ANSIBLE_LOG}\n  whether the ansible returns OK or not. \n  tail -f ${ANSIBLE_LOG}\n\n";
+    printf "* One can check the ansible log ${ANSIBLE_LOG}\n  whether the ansible returns OK or not. \n  tail -f ${ANSIBLE_LOG}\n\n";
 fi
 
-     
+
 exit
 
