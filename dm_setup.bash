@@ -397,9 +397,15 @@ function update_eeelocal_parameters() {
     
     local rsync_server="rsync://owncloud01.esss.lu.se:80";
 
-    # Does CentOS EEE need ELDK EEE stuffs?
+    # - .git directory should not be in EEE. 
+    # - Does CentOS EEE need ELDK EEE stuffs? (*)
+    # - Do we still need SL6-x86_64 - Scientific Linux?
+    # - Why do we have EPICS Base 3.15.2 still?
     #
-    local rsync_general_option="--recursive --links --perms --times --timeout 120 --exclude='.git/' --exclude='SL6-x86_64/' --exclude='*eldk*/' ";
+    # Anyway, the above list is excluded in the rsync option. ELDK EEE may be considered later, but the others are self-evidence, ICS doesn't need them in
+    # EEE. So, save time, save a network traffic.
+    # 
+    local rsync_general_option="--recursive --links --perms --times --timeout 120 --exclude='.git/' --exclude='SL6-x86_64/' --exclude='*eldk*/' --exclude='3.15.2/' ";
 
     local rsync_epics_option="${rsync_general_option} --log-file=${RSYNC_EPICS_LOG} ";
     local rsync_startup_option="${rsync_general_option} --log-file=${RSYNC_STARTUP_LOG} ";
