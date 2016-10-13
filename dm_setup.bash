@@ -215,7 +215,7 @@ function git_selection() {
 # Specific only for this script : Global vairables - readonly
 #
 declare -gr SUDO_CMD="sudo"
-declare -gr ANSIBLE_VARS="DEVENV_SSSD=false DEVENV_EEE=local DEVENV_CSS=true DEVENV_OPENXAL=false DEVENV_IPYTHON=false"
+declare -g  ANSIBLE_VARS=""
 declare -gr RSYNC_EPICS_LOG="/tmp/rsync-epics.log"
 declare -gr RSYNC_STARTUP_LOG="/tmp/rsync-startup.log"
 declare -gr ANSIBLE_LOG="/var/log/ansible.log"
@@ -484,8 +484,359 @@ EOF
 }
 
 
+declare -g SSSD_status;
+declare -g EEELOC_status;
+declare -g EEENFS_status;
+declare -g CSS_status;
+declare -g XAL_status;
+declare -g IPY_status;
+declare -g LIGHTDM_status;
+declare -g OPENBOX_status;
+declare -g GNOME_status;
 
-${SUDO_CMD} -v
+
+
+function debug_whiptail(){
+
+    local choice;
+    local name=$1;
+    local choices=$2;
+    local exit_status=$3;
+    printf "\n";
+    for choice in "${choices}"; do
+	printf "%20s : debug\n" "$name";
+	printf "%20s : select %s\n" "$choice";
+	printf "%20s : exit status \n" "$exit_status";
+    done;
+}
+
+
+function set_dev_input() {
+
+    SSSD_status=$1;
+    EEELOC_status=$2;
+    EEENFS_status=$3;
+    CSS_status=$4;
+    XAL_status=$5;
+    IPY_status=$6;
+    LIGHTDM_status=$7;
+    OPENBOX_status=$8;
+    GNOME_status=$9;
+    
+}
+
+
+function print_dev_input() {
+
+    printf "SSSD      status : %d\n" "$SSSD_status";
+    printf "EEE local status : %d\n" "$EEELOC_status";
+    printf "EEE nfs   status : %d\n" "$EEENFS_status";
+    printf "CSS       status : %d\n" "$CSS_status";
+    printf "OpenXAL   status : %d\n" "$XAL_status";
+    printf "IPhython  status : %d\n" "$IPY_status";
+    printf "LightDM   status : %d\n" "$LIGHTDM_status";
+    printf "OpenBox   status : %d\n" "$OPENBOX_status";
+    printf "Gnome     status : %d\n" "$GNOME_status";
+
+}
+
+
+function set_ansible_variable() {
+
+    local s_ssd_status="DEVENV_SSSD=";
+    local s_eee_status="DEVENV_EEE=";
+    local s_css_status="DEVENV_CSS=";
+    local s_xal_status="DEVENV_OPENXAL=";
+    local s_ipy_status="DEVENV_IPYTHON=";
+    # TBD
+    local s_gnome_status="";
+    local s_lightdm_status="";
+    local s_openbox_status="";
+
+    local s_space=" ";
+
+
+    if [ $SSSD_status = 0 ]; then
+	s_ssd_status+="false";
+    elif [ $SSSD_status = 1 ]; then
+	s_ssd_status+="true";
+    else
+	printf "Something is not right on %s , and exit\n" "${s_ssd_status}";
+     	exit;
+    fi
+
+    #    mounted/local/absent
+    if   [ $EEELOC_status = 1 ] && [ $EEENFS_status = 0 ]; then
+	s_eee_status+="local";
+    elif [ $EEELOC_status = 0 ] && [ $EEENFS_status = 1 ]; then
+	s_eee_status+="mounted";
+    elif [ $EEELOC_status = 0 ] && [ $EEENFS_status = 0 ]]; then
+	s_eee_status+="absent";
+    else
+	printf "Something is not right on %s , and exit\n" "${s_eee_status}";
+     	exit;
+    fi
+    
+    if [ $CSS_status = 0 ]; then
+	s_css_status+="false";
+    elif [ $CSS_status = 1 ]; then
+	s_css_status+="true";
+    else
+	printf "Something is not right on %s , and exit\n" "${s_css_status}";
+     	exit;
+    fi
+	
+    if [ $XAL_status = 0 ]; then
+	s_xal_status+="false";
+    elif [ $XAL_status = 1 ]; then
+	s_xal_status+="true";
+    else
+	printf "Something is not right on %s , and exit\n" "${s_xal_status}";
+     	exit;
+    fi	
+    if [ $IPY_status = 0 ]; then
+	s_ipy_status+="false";
+    elif [ $IPY_status = 1 ]; then
+	s_ipy_status+="true";
+    else
+	printf "Something is not right on %s , and exit\n" "${s_ipy_status}";
+     	exit;
+    fi
+    
+    
+    ANSIBLE_VARS+=${s_ssd_status};
+    ANSIBLE_VARS+=${s_space};
+    ANSIBLE_VARS+=${s_eee_status};
+    ANSIBLE_VARS+=${s_space};
+    ANSIBLE_VARS+=${s_css_status};
+    ANSIBLE_VARS+=${s_space};
+    ANSIBLE_VARS+=${s_xal_status};
+    ANSIBLE_VARS+=${s_space};
+    ANSIBLE_VARS+=${s_ipy_status};
+    printf "%s\n\n" "${ANSIBLE_VARS}";
+    
+    print_dev_input
+}
+
+
+
+function main_menu() {
+
+
+    # 0) ask the purpose of this installation
+    #    *) IOC without UI
+    #    *) IOC with light UI (lightdm, openbox)
+    #    *) IOC with full  UI (default : Gnome3, gdm)
+    #    *) DM  with light UI (ligthdm, openbox)
+    #    *) DM  with full  UI (default: gnome3, gdm)
+    # 
+    # 1) ask the installation optoins:
+    #    *) EEE - nfs
+    #    *) ESS - local
+    #    *) CSS
+    #    *) OpenXAL
+    #    *) LDAP
+    #    *) IPhython
+    #
+    #  2) check the conflict between 0) and 1)
+    #     check HW spec
+    #     tell what is recommended
+    #
+    #  3) transfer this information to ansible input
+    #
+    #  4) execute extra functions to fulfuil the selection
+    
+    local IOC_without_UI="IOC without UI";
+    local IOC_with_lightUI="IOC with Light UI";
+    local IOC_with_CSSlightUI="IOC and CSS with Light UI";
+    local IOC_with_defaultUI="IOC with Default UI";
+    local DM_with_defaultUI="Default DM with options" ;
+
+    set_dev_input 0 0 0 0 0 0 0 0 0 
+
+    local  main_exitsatus;
+    local  main_choices;
+    local  dm_choices;
+    local  dm_exitstatus;
+
+    
+    main_cmd=(whiptail --title "ESS Development Machine Configuration" \
+		       --menu  "Please select one of predefined option:" \
+		       16 78 5);
+    
+    main_opt=("${IOC_without_UI}"       "EEE local"
+	      "${IOC_with_lightUI}"     "EEE local with lightdm and openbox"
+	      "${IOC_with_CSSlightUI}"  "EEE local and CSS with lightdm and openbox"
+	      "${IOC_with_defaultUI}"   "EEE local and CSS with gdm and gnome3"
+	      "${DM_with_defaultUI}"    "Select further.... ")
+
+    dm_cmd=(whiptail --title "DM Configurations with GNOME3 and GDM" \
+ 		     --checklist "Select preferred options via [SPACE]  "\
+		     20 78 8 );
+    
+    dm_opt=("SSSD"    "Active Directory integration"   OFF
+	    "EEE"     "ESS EPICS Environment"          OFF
+	    "CSS"     "Control System Studio"          OFF
+	    "XAL"     "High Level Application OpenXAL" OFF
+	    "IPhyton" "Ipython Notebook Server"        OFF
+	   )
+
+    e3_cmd=(whiptail --title "Possible EEE configuration" \
+		     --radiolist "Select the EEE configurations via [SPACE] :"\
+		     --nocancel\
+		     15 60 4);
+    
+    e3_opt=("EEEloc"  "Local copied EEE"   ON
+	    "EEEnfs"  "NFS mounted  EEE"  OFF);
+    
+    main_status=0;
+    
+    while [ "$main_status" -eq 0 ];
+    do
+	main_choice=$("${main_cmd[@]}" "${main_opt[@]}" 3>&1 1>&2 2>&3 )
+	main_exitstatus=$?
+
+ 	#	debug_whiptail "main" "$main_choice" "$main_exitstatus";
+
+ 	if [ $main_exitstatus = 0 ]; then
+	    {
+			    
+	    case "${main_choice}" in
+
+    		"${IOC_without_UI}")
+    		    set_dev_input 0 1 0 0 0 0 0 0 0
+		    main_status=1;
+    		    ;;
+    		"${IOC_with_lightUI}")
+    		    set_dev_input 0 1 0 0 0 0 1 1 0
+		    main_status=1;
+    		    ;;
+		"${IOC_with_CSSlightUI}")
+    		    set_dev_input 0 1 0 1 0 0 1 1 0
+		    main_status=1;
+    		    ;;
+    		"${IOC_with_defaultUI}")
+    		    set_dev_input 0 1 0 1 0 0 0 0 1
+		    main_status=1;
+    		    ;;
+    		"${DM_with_defaultUI}")
+		    # Set Default UI
+    		    set_dev_input 0 0 0 0 0 0 0 0 1
+		    dm_status=0;
+		    while [ "$dm_status" -eq 0 ]; 
+		    do 
+			dm_choices=$("${dm_cmd[@]}" "${dm_opt[@]}" 3>&1 1>&2 2>&3 )
+			dm_exitstatus=$?
+			#		    	debug_whiptail "DM" "${dm_choices}" "${dm_exitstatus}"
+
+			case ${dm_exitstatus} in
+			    0)
+				for dm_choice in $dm_choices; do # for dm_choice in $dm_choices; do
+				    dm_choice=${dm_choice//\"};
+				    # 	#			echo $dm_choice;
+				    case ${dm_choice} in
+					
+					"SSSD")
+		    			    SSSD_status=1;
+				     	    ;;
+		    			"EEE")
+					    e3_status=0;
+					    while [ "$e3_status" -eq 0 ];
+					    do 
+		    				# only one selection
+		    				e3_sel=$("${e3_cmd[@]}" "${e3_opt[@]}" 3>&1 1>&2 2>&3);
+		    				e3_exitstatus=$?
+						#		    				debug_whiptail "E3" "${e3_sel}" "${e3_exitstatus}"
+						
+						case ${e3_exitstatus} in
+						    0)
+							case ${e3_sel//\"} in
+		    		    			    "EEEloc")
+		    		    		     		EEELOC_status=1;
+		    		    				;;
+		    		    			    "EEEnfs")
+		    		    				EEENFS_status=1;
+		    		    				;;
+		    					esac
+							e3_status=1;
+							;;
+						    *)
+							#
+							# don't accept "ESC", and others
+							#
+							e3_status=0;
+							;;
+                                                esac
+                                            done;
+		    			    ;;
+
+                                         "CSS")
+		    			    CSS_status=1;	
+		    			    ;;
+					 
+		    			"XAL")
+		    			    XAL_status=1;
+		    			    ;;
+					
+		    			"IPhyton")
+		    			    IPY_status=1;
+		    			    ;;
+		    		    esac
+				
+			    	done # for dm_choice in $dm_choices; do
+
+				dm_status=1
+				main_status=1
+				;;
+			    *)
+				dm_status=1;
+				main_status=0;
+			    ;;
+			esac
+		    done
+		    ;;
+	    esac
+    
+	    }
+	else # if [ $main_exitstatus = 0 ]; then
+	    {
+	    whiptail --title "ESS Development Machine Configuration" \
+ 		     --yesno  "You hit the escape button or select the cancel button, so do you want to terminate the entire dm_setup procedure?" \
+		     --defaultno \
+		     8 78;
+ 	    lastmsg_exitstatus=$?;
+ 	    if [ $lastmsg_exitstatus = 0 ]; then
+		main_status=1;
+	    else
+		main_status=0;
+	    fi
+	    }
+	fi # [ $main_exitstatus = 0 ]; then
+	#	debug_whiptail "ESCAPE" 0  "${lastmsg_exitstatus}"
+
+    done
+
+
+    set_ansible_variable
+
+    # it is better to ask an user again "is this OK?"
+    # will look for a method later...
+}
+
+
+ 
+
+main_menu
+
+# #print_dev_input
+
+# Ask the password in order to do many sudo job, and extended
+# the sudo timeout for another N mins (5 CentOS 7.1, 15 Debian 8)
+# 
+# -v : extend the timeout
+# -S : stdin
+# 
+${SUDO_CMD} -v -S <<< $(whiptail --title "SUDO Password Box" --passwordbox "Enter your password and choose Ok to continue." 10 60 3>&1 1>&2 2>&3);
 
 #
 # This "keep sudo" functionality

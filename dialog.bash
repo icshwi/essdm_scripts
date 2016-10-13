@@ -19,7 +19,7 @@
 # Author : Jeong Han Lee
 # email  : han.lee@esss.se
 # Date   : 
-# version : 0.1.0 
+# version : 0.1.1 
 #
 
 declare -g SSSD_status;
@@ -120,7 +120,6 @@ function main_menu() {
     
     main_cmd=(whiptail --title "ESS Development Machine Configuration" \
 		       --menu  "Please select one of predefined option:" \
-		       --nocancel\
 		       16 78 5);
     
     main_opt=("${IOC_without_UI}"       "EEE local"
@@ -256,7 +255,7 @@ function main_menu() {
 	    esac
 	else
 	    whiptail --title "ESS Development Machine Configuration" \
-		     --yesno  "You hit the escape button or something else, so terminate the entire dm_setup procedure?" \
+		     --yesno  "You hit the escape button or select the cancel button, so do you want to terminate the entire dm_setup procedure?" \
 		     --defaultno \
 		     8 78;
 	    lastmsg_exitstatus=$?;
