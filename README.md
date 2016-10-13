@@ -36,7 +36,7 @@ Download the CentOS 7.1 (1503) as following links :
 
 * Short, but it has no meaning
 ```
-$ curl -L https://git.io/vi8DA -o dm_setup.bash
+$ curl -L https://git.io/vPVRP -o dm_setup.bash
 ```
 * Long, but it is self-evidence
 ```
