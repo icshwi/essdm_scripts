@@ -20,7 +20,7 @@
 # Author : Jeong Han Lee
 # email  : han.lee@esss.se
 # Date   : 
-# version : 0.9.5
+# version : 0.9.6
 #
 # http://www.gnu.org/software/bash/manual/bashref.html#Bash-Builtins
 
@@ -384,7 +384,7 @@ function update_eeelocal_parameters() {
     # It is the bad idea to have the same "ess" in everywhere
 
     # is needed to transfer bash variable into sed
-    sed -i~ "s/name=ess/name=${SC_IOCUSER}/g"   "${target_dir}/tasks/main.yml"
+    sed -i~ "s/name=ess/name=${SC_IOCUSER}/g"     "${target_dir}/tasks/main.yml"
     sed -i  "s/a user ess/a user ${SC_IOCUSER}/g" "${target_dir}/tasks/main.yml"
     sed -i  "s/owner=ess/owner=${SC_IOCUSER}/g"   "${target_dir}/tasks/main.yml"
     
@@ -405,7 +405,7 @@ function update_eeelocal_parameters() {
     # Anyway, the above list is excluded in the rsync option. ELDK EEE may be considered later, but the others are self-evidence, ICS doesn't need them in
     # EEE. So, save time, save a network traffic.
     # 
-    local rsync_general_option="--recursive --links --perms --times --timeout 120 --exclude='.git/' --exclude='SL6-x86_64/' --exclude='*eldk*/' --exclude='3.15.2/' ";
+    local rsync_general_option="--recursive --links --perms --times --timeout 120 --exclude='.git/' --exclude='SL6-x86_64/' --exclude='*eldk*/' --exclude='*3.15.2/' ";
 
     local rsync_epics_option="${rsync_general_option} --log-file=${RSYNC_EPICS_LOG} ";
     local rsync_startup_option="${rsync_general_option} --log-file=${RSYNC_STARTUP_LOG} ";
@@ -570,7 +570,7 @@ function set_ansible_variable() {
 	s_eee_status+="local";
     elif [ $EEELOC_status = 0 ] && [ $EEENFS_status = 1 ]; then
 	s_eee_status+="mounted";
-    elif [ $EEELOC_status = 0 ] && [ $EEENFS_status = 0 ]]; then
+    elif [ $EEELOC_status = 0 ] && [ $EEENFS_status = 0 ]; then
 	s_eee_status+="absent";
     else
 	printf "Something is not right on %s , and exit\n" "${s_eee_status}";
@@ -746,7 +746,7 @@ function main_menu() {
 		    				# only one selection
 		    				e3_sel=$("${e3_cmd[@]}" "${e3_opt[@]}" 3>&1 1>&2 2>&3);
 		    				e3_exitstatus=$?
-						#		    				debug_whiptail "E3" "${e3_sel}" "${e3_exitstatus}"
+						#debug_whiptail "E3" "${e3_sel}" "${e3_exitstatus}"
 						
 						case ${e3_exitstatus} in
 						    0)
