@@ -40,7 +40,7 @@ $ curl -L https://git.io/vPVRP -o dm_setup.bash
 ```
 * Long, but it is self-evidence
 ```
-$ curl -L https://raw.githubusercontent.com/jeonghanlee/essdm_scripts/master/dm_setup.bash -o dm_setup.bash
+$ curl -L https://raw.githubusercontent.com/jeonghanlee/essdm_scripts/dialog/dm_setup.bash -o dm_setup.bash
 ```
 
 ### Execute the script
