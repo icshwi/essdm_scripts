@@ -23,10 +23,10 @@ Download the CentOS 7.1 (1503) as following links :
 ## Things one should do carefully
 * Set Installation Source as **Local media** 
 * Create iocuser and set the administrator permission
-* **Do not "yum" before executing the dm_setup script**.  DM **should** use the ESS RPM repositories, not any other CentOS ones. The script will remove original CentOS repositories completely, and put the ESS customized repositories.  
+* **Do not "yum" before executing the script**.  DM **should** use the ESS RPM repositories, not any other CentOS ones. The script will remove original CentOS repositories completely, and put the ESS customized repositories.  
 
 
-## DM Setup
+## ESS DM Client and Server Setup
 
 ### Login the CentOS as iocuser
 
@@ -34,19 +34,25 @@ Download the CentOS 7.1 (1503) as following links :
 
 ### Download the script
 
-* Short, but it has no meaning
+* In case, DM client to "ESS" EEE server
 ```
 $ curl -L https://git.io/vPVRP -o dm_setup.bash
 ```
-* Long, but it is self-evidence
+* In case, the IK EEE server synced to "ESS" EEE server
 ```
-$ curl -L https://raw.githubusercontent.com/jeonghanlee/essdm_scripts/dialog/dm_setup.bash -o dm_setup.bash
+$ curl -L https://git.io/vP1Gq -o e3_server.bash
 ```
+
+
 
 ### Execute the script
 
 ```
 $ bash dm_setup.bash 
+```
+
+```
+$ bash e3_server.bash
 ```
 
 ## Reference 
