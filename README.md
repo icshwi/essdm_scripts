@@ -38,7 +38,7 @@ Download the CentOS 7.1 (1503) as following links :
 ```
 $ curl -L https://git.io/vPVRP -o dm_setup.bash
 ```
-* In case, the IK EEE server synced to "ESS" EEE server
+* In case, the IK EEE server synced to "ESS" EEE server [2]
 ```
 $ curl -L https://git.io/vP1Gq -o e3_server.bash
 ```
@@ -57,6 +57,7 @@ $ bash e3_server.bash
 
 ## Reference 
 [1] https://ess-ics.atlassian.net/wiki/display/DE/ESS+physical+DM+setup
+[2] https://ess-ics.atlassian.net/wiki/display/DE/In-kind+EEE+server
 
 ## Installation Example
 Please see the [README.md in DMonVM](./DMonVM/README.md).
