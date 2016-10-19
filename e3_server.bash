@@ -231,7 +231,11 @@ function print_logrotate_rule() {
 
 
 function print_tftp_rule() {
-
+    # server_args
+    # -4 : ipv4 only
+    # -p : Perform no additional permissions checks above the normal system-provided access controls for the user specified via the --user option.
+    # -s : Change root directory on startup. This means the remote host does not need to pass along the directory as part of the transfer, and may add security. When --secure is specified, exactly one directory should be specified on the command line. The use of this option is recommended for security as well as compatibility with some boot ROMs which cannot be easily made to include a directory name in its request.
+    # -vv :  Increase the logging verbosity of tftpd. This flag can be specified multiple times for even higher verbosity.
     printf "%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n" \
 	   "service tftp" \
 	   "{" \
@@ -240,7 +244,7 @@ function print_tftp_rule() {
            "  wait         = yes"                \
 	   "  user         = root"               \
 	   "  server       = /usr/sbin/in.tftpd" \
-	   "  server_args  = -p -svv /export"    \
+	   "  server_args  = -4 -p -s -vv /export"    \
            "  disable      = no"                 \
            "  per_source   = 11"                 \
 	   "  cps          = 100 2"              \
@@ -273,7 +277,7 @@ function preparation() {
     local ansible_cfg="/etc/ansible/ansible.cfg";
     local ansible_logrotate="/etc/logrotate.d/ansible";
     local ansible_logrotate_rule=$(print_logrotate_rule "${ANSIBLE_LOG}" "${SC_IOCUSER}");
-    local ansilbe_log_init=$(printf "Note that ansible is not running currently,\nPlease wait for it, it will show up here soon....\nThis screen is updated every 2 seconds, to check the ansible log file in %s\n" "${ANSIBLE_LOG}");
+    local ansilbe_log_init=$(printf "Note that ansible is not running currently,\nPlease wait for it, it will show up here soon....\nThis screen is updated every 2 seconds, to check the ansible log file in %s \n\n" "${ANSIBLE_LOG}");
     
     # Somehow, yum is running due to PackageKit, so if so, kill it
     #
@@ -419,7 +423,7 @@ function update_e3server_parameters() {
     # Anyway, the above list is excluded in the rsync option. ELDK EEE may be considered later, but the others are self-evidence, ICS doesn't need them in
     # EEE. So, save time, save a network traffic.
     # 
-    local rsync_general_option="--recursive --links --perms --times --timeout 120 --exclude='.git/' --exclude='SL6-x86_64/' --exclude='*3.15.2/'  --exclude='modules/tr/' --exclude='modules/tg/' -exclude='ursarojec/' --exclude='environment/1.0.*/' --exclude='environment/1.1.*'  --exclude='environment/1.2.*/'  --exclude='environment/1.3.*/'  --exclude='environment/1.4.*/'  --exclude='environment/1.5.*/'  --exclude='environment/1.6.*/'  --exclude='environment/1.7.*/' ";
+    local rsync_general_option="--recursive --links --perms --times --timeout 120 --exclude='.git/' --exclude='SL6-x86_64/' --exclude='*3.15.2/'  --exclude='modules/tr/' --exclude='modules/tg/' --exclude='ursarojec/' --exclude='environment/1.0.*/' --exclude='environment/1.1.*'  --exclude='environment/1.2.*/'  --exclude='environment/1.3.*/'  --exclude='environment/1.4.*/'  --exclude='environment/1.5.*/'  --exclude='environment/1.6.*/'  --exclude='environment/1.7.*/' ";
 
     local rsync_epics_option="${rsync_general_option} --log-file=${RSYNC_EPICS_LOG} ";
     local rsync_startup_option="${rsync_general_option} --log-file=${RSYNC_STARTUP_LOG} ";
@@ -504,7 +508,7 @@ function print_ferr_exit() {
 }
 
 
-function new_feature(){
+function tftp_server_conf(){
 
     local func_name=${FUNCNAME[*]}; ini_func ${func_name};
     checkstr ${SUDO_CMD};
@@ -525,8 +529,52 @@ function new_feature(){
     ${SUDO_CMD} systemctl start xinetd
     # TFTP uses 69 port
     # https://www.digitalocean.com/community/tutorials/how-to-set-up-a-firewall-using-firewalld-on-centos-7
-    ${SUDO_CMD} firewall-cmd --zone=public --add-service=tftp --permanent
+    #${SUDO_CMD} iptables -I INPUT -p udp --dport 69 -j ACCEPT
+    ${SUDO_CMD} firewall-cmd --zone=public --permanent --add-service=tftp
     ${SUDO_CMD} firewall-cmd --reload
+    
+    end_func ${func_name};
+}
+
+function nfs_sever_conf() {
+    local func_name=${FUNCNAME[*]}; ini_func ${func_name};
+    checkstr ${SUDO_CMD};
+    ## firewall-cmd --zone=public --permanent --list-services
+    ## firewall-cmd --get-services
+
+
+    # If we want to use "NFSv3" to allow IOxOS boards to connect the nfs-server,
+    # we have to do the following things
+    # 1) set the static ports in /etc/sysconfig/nfs
+    # 2) allow the ports via firewall-cmd
+    
+    # https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html/Security_Guide/sec-Securing_Services.html#sec-Securing_NFS
+    # 
+    # 4.3.7.5. NFS Firewall Configuration
+    # NFSv4 is the default version of NFS for Red Hat Enterprise Linux 7 and it only requires port 2049 to be open for TCP. If using NFSv3 then four additional ports are required as explained below.
+    # ⁠Configuring Ports for NFSv3
+    # The ports used for NFS are assigned dynamically by rpcbind, which can cause problems when creating firewall rules. To simplify this process, use the /etc/sysconfig/nfs file to specify which ports are to be used:
+
+    # MOUNTD_PORT — TCP and UDP port for mountd (rpc.mountd)
+    # STATD_PORT — TCP and UDP port for status (rpc.statd)
+    # LOCKD_TCPPORT — TCP port for nlockmgr (rpc.lockd)
+    # LOCKD_UDPPORT — UDP port nlockmgr (rpc.lockd) 
+
+    # Port numbers specified must not be used by any other service. Configure your firewall to allow the port numbers specified, as well as TCP and UDP port 2049 (NFS).
+    # Run the rpcinfo -p command on the NFS server to see which ports and RPC programs are being used.
+    ⁠
+    # 1) edit /etc/sysconfig/nfs
+    # 2) run systemctl restart nfs-config
+    # 3) add the static ports in the exceptions in firewall
+    
+
+    # 4) run the following commands 
+    # The following commnad open only "tcp 2049" for NFS4 defined in /lib/firewalld/services/nfs.xml
+    ${SUDO_CMD} firewall-cmd --zone=public --permanent --add-service=nfs
+    ${SUDO_CMD} firewall-cmd --zone=public --permanent --add-service=mountd
+    ${SUDO_CMD} firewall-cmd --zone=public --permanent --add-service=rpc-bind
+    ${SUDO_CMD} firewall-cmd --zone=public --reload
+
     
     end_func ${func_name};
 }
@@ -593,6 +641,20 @@ end_func "Ansible Playbook"
 
 popd
 
+## tftp
+tftp_server_conf
+if [ "$?" != "0" ]; then
+    printf_ferr "tftp_server_conf";
+fi
+
+## nfs firewall for NFSv4 / NFSv3
+nfs_sever_conf
+if [ "$?" != "0" ]; then
+    printf_ferr "nfs_sever_conf";
+fi
+
+## /export/boot diretory prepration
+## uboot configuration scripts
 
 # # #
 # # #
