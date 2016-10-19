@@ -59,6 +59,7 @@ $ bash e3_server.bash
 [1] https://ess-ics.atlassian.net/wiki/display/DE/ESS+physical+DM+setup
 
 [2] https://ess-ics.atlassian.net/wiki/display/DE/In-kind+EEE+server
+
 [3] https://ess-ics.atlassian.net/wiki/display/HAR/How+to+setup+lab+infrastructure
 
 ## Installation Example
