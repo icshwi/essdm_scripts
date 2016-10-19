@@ -360,7 +360,7 @@ function yum_extra(){
     
     checkstr ${SUDO_CMD}
 
-    ${SUDO_CMD} yum -y install emacs screen
+    ${SUDO_CMD} yum -y install emacs tree screen
 
     # Now it is safe to run update by an user, let them do this job.
     
@@ -401,7 +401,7 @@ function update_e3server_parameters() {
     # Anyway, the above list is excluded in the rsync option. ELDK EEE may be considered later, but the others are self-evidence, ICS doesn't need them in
     # EEE. So, save time, save a network traffic.
     # 
-    local rsync_general_option="--recursive --links --perms --times --timeout 120 --exclude='.git/' --exclude='SL6-x86_64/' ";
+    local rsync_general_option="--recursive --links --perms --times --timeout 120 --exclude='.git/' --exclude='SL6-x86_64/' --exclude='*3.15.2/'  --exclude='modules/tr/' --exclude='modules/tg/' -exclude='ursarojec/' --exclude='environment/1.0.*/' --exclude='environment/1.1.*'  --exclude='environment/1.2.*/'  --exclude='environment/1.3.*/'  --exclude='environment/1.4.*/'  --exclude='environment/1.5.*/'  --exclude='environment/1.6.*/'  --exclude='environment/1.7.*/' ";
 
     local rsync_epics_option="${rsync_general_option} --log-file=${RSYNC_EPICS_LOG} ";
     local rsync_startup_option="${rsync_general_option} --log-file=${RSYNC_STARTUP_LOG} ";
@@ -480,6 +480,10 @@ EOF
 }
 
 
+function print_ferr_exit() {
+    printf "%s doesn't have the proper exit, no way to continue\n" "$1";
+    exit;
+}
 
 ${SUDO_CMD} -v
 
@@ -496,11 +500,10 @@ do
     kill -0 "$$" || exit;
 done 2>/dev/null &
 
-declare -i tag_cnt=$1;
-
-
 preparation
-
+if [ "$?" != "0" ]; then
+    printf_ferr "preparation";
+fi
 #
 #
 SC_GIT_SRC_NAME="ics-ans-nfsserver"
@@ -510,16 +513,31 @@ SC_GIT_SRC_DIR=${SC_TOP}/${SC_GIT_SRC_NAME}
 #
 #
 git_clone
+if [ "$?" != "0" ]; then
+    printf_ferr "git_clone";
+fi
 #
 #
+
 declare -i tag_cnt=$1;
 
 pushd ${SC_GIT_SRC_DIR}
 #
 #
 git_selection  ${tag_cnt};
+if [ "$?" != "0" ]; then
+    printf_ferr "git_selection";
+fi
+
 update_e3server_parameters
+if [ "$?" != "0" ]; then
+    printf_ferr "update_e3server_parameters";
+fi
+
 is-active-ui
+if [ "$?" != "0" ]; then
+    printf_ferr "is-active-ui";
+fi
 
 ini_func "Ansible Playbook"
 ${SUDO_CMD} ansible-playbook nfsserver.yml
@@ -533,6 +551,9 @@ popd
 # # #
 # # #yum_gui
 yum_extra
+if [ "$?" != "0" ]; then
+    printf_ferr "yum_extra";
+fi
 # #
 
 if [[ ${GUI_STATUS} = "inactive" ]]; then
