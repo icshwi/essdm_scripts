@@ -230,6 +230,24 @@ function print_logrotate_rule() {
 }
 
 
+function print_tftp_rule() {
+
+    printf "%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n" \
+	   "service tftp" \
+	   "{" \
+	   "  socket_type  = dgram"              \
+	   "  protocol     = udp"                \
+           "  wait         = yes"                \
+	   "  user         = root"               \
+	   "  server       = /usr/sbin/in.tftpd" \
+	   "  server_args  = -p -svv /export"    \
+           "  disable      = no"                 \
+           "  per_source   = 11"                 \
+	   "  cps          = 100 2"              \
+	   "  flags        = IPv4"               \
+	   "}"; 
+}
+
 
 # Specific : preparation
 #
@@ -484,6 +502,35 @@ function print_ferr_exit() {
     printf "%s doesn't have the proper exit, no way to continue\n" "$1";
     exit;
 }
+
+
+function new_feature(){
+
+    local func_name=${FUNCNAME[*]}; ini_func ${func_name};
+    checkstr ${SUDO_CMD};
+
+    # we should add the tftp configuration in the ansible area
+
+    # 1) required packages
+    
+    ${SUDO_CMD} yum -y install tftp-server tftp
+
+    # 2) update tftp configuration in /etx/xinet.d/tftp
+
+    local tftp_rule_file="/etc/xinet.d/tftp";
+    
+    local tftp_rule=$(print_tftp_rule);
+    printf_tee "${tftp_rule}"  "${tftp_rule_tile}";
+
+    ${SUDO_CMD} systemctl start xinetd
+    # TFTP uses 69 port
+    # https://www.digitalocean.com/community/tutorials/how-to-set-up-a-firewall-using-firewalld-on-centos-7
+    ${SUDO_CMD} firewall-cmd --zone=public --add-service=tftp --permanent
+    ${SUDO_CMD} firewall-cmd --reload
+    
+    end_func ${func_name};
+}
+
 
 ${SUDO_CMD} -v
 
