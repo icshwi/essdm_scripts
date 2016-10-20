@@ -253,15 +253,39 @@ function print_tftp_rule() {
 	   "}"; 
 }
 
-declare -gr ess_repo_url="https://artifactory01.esss.lu.se/artifactory/list/devenv/repositories/repofiles"
-declare -gr yum_repo_dir="/etc/yum.repos.d"
-declare -gr rpmgpgkey_dir="/etc/pki/rpm-gpg"
-declare -gr repo_centos="CentOS-Base.repo"
-declare -gr repo_epel="epel-19012016.repo"
-declare -gr rpmgpgkey_epel="RPM-GPG-KEY-EPEL-7"
+
+# Specific : preparation
+#
+# Require Global vairable
+# - SUDO_CMD :  input
+# - 
+
+function preparation() {
+    
+    local func_name=${FUNCNAME[*]}; ini_func ${func_name};
+    checkstr ${SUDO_CMD};
+
+    # yum, repository
+    declare -r yum_pid="/var/run/yum.pid"
+    declare -r ess_repo_url="https://artifactory01.esss.lu.se/artifactory/list/devenv/repositories/repofiles"
+    declare -r yum_repo_dir="/etc/yum.repos.d"
+    declare -r rpmgpgkey_dir="/etc/pki/rpm-gpg"
+    declare -r repo_centos="CentOS-Base.repo"
+    declare -r repo_epel="epel-19012016.repo"
+    declare -r rpmgpgkey_epel="RPM-GPG-KEY-EPEL-7"
 
 
-function cleanup_repos() {
+    # ansible 
+    local ansible_cfg="/etc/ansible/ansible.cfg";
+    local ansible_logrotate="/etc/logrotate.d/ansible";
+    local ansible_logrotate_rule=$(print_logrotate_rule "${ANSIBLE_LOG}" "${SC_IOCUSER}");
+    local ansilbe_log_init=$(printf "Note that ansible is not running currently,\nPlease wait for it, it will show up here soon....\nThis screen is updated every 2 seconds, to check the ansible log file in %s \n\n" "${ANSIBLE_LOG}");
+    
+    # Somehow, yum is running due to PackageKit, so if so, kill it
+    #
+    if [[ -e ${yum_pid} ]]; then
+	${SUDO_CMD} kill -9 $(cat ${yum_pid})
+    fi
     
     # Necessary to clean up the existent CentOS repositories
     # 
@@ -278,34 +302,6 @@ function cleanup_repos() {
 		-o ${yum_repo_dir}/${repo_epel}       ${ess_repo_url}/${repo_epel} \
 		-o ${rpmgpgkey_dir}/${rpmgpgkey_epel} ${ess_repo_url}/${rpmgpgkey_epel}
     
-}
-# Specific : preparation
-#
-# Require Global vairable
-# - SUDO_CMD :  input
-# - 
-
-function preparation() {
-    
-    local func_name=${FUNCNAME[*]}; ini_func ${func_name};
-    checkstr ${SUDO_CMD};
-
-    # yum, repository
-    declare -r yum_pid="/var/run/yum.pid"
-
-
-    # ansible 
-    local ansible_cfg="/etc/ansible/ansible.cfg";
-    local ansible_logrotate="/etc/logrotate.d/ansible";
-    local ansible_logrotate_rule=$(print_logrotate_rule "${ANSIBLE_LOG}" "${SC_IOCUSER}");
-    local ansilbe_log_init=$(printf "Note that ansible is not running currently,\nPlease wait for it, it will show up here soon....\nThis screen is updated every 2 seconds, to check the ansible log file in %s \n\n" "${ANSIBLE_LOG}");
-    
-    # Somehow, yum is running due to PackageKit, so if so, kill it
-    #
-    if [[ -e ${yum_pid} ]]; then
-	${SUDO_CMD} kill -9 $(cat ${yum_pid})
-    fi	
-
     cleanup_repos
     
     # Install "git and ansible" and logrotate for real works
