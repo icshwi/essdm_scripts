@@ -23,7 +23,7 @@
 #
 # http://www.gnu.org/software/bash/manual/bashref.html#Bash-Builtins
 
-set -euo pipefail
+set -o pipefail
 
 
 # 
@@ -624,7 +624,11 @@ git_clone
 #
 #
 
-declare -i tag_cnt=$1;
+declare -i tag_cnt=0;
+# no set n_tags, set default 10
+if [[ ${tag_cnt} -eq 0 ]]; then
+    tag_cnt=${1};
+fi
 
 pushd ${SC_GIT_SRC_DIR}
 #
