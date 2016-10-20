@@ -253,6 +253,7 @@ function print_tftp_rule() {
 	   "}"; 
 }
 
+declare -gr ess_repo_url="https://artifactory01.esss.lu.se/artifactory/list/devenv/repositories/repofiles"
 declare -gr yum_repo_dir="/etc/yum.repos.d"
 declare -gr rpmgpgkey_dir="/etc/pki/rpm-gpg"
 declare -gr repo_centos="CentOS-Base.repo"
@@ -273,7 +274,7 @@ function cleanup_repos() {
     # Download the ESS customized repository files and its RPM GPG KEY file
     #
     ${SUDO_CMD} curl \
-		-o ${yum_repo_dir}/${repo_centos}     ${ess_repo_url}/${repo_centos} \
+		-o ${yum_repo_dir}/${repo_centos}     ${ess_repo_url}/CentOS-Vault-7.1.1503.repo \
 		-o ${yum_repo_dir}/${repo_epel}       ${ess_repo_url}/${repo_epel} \
 		-o ${rpmgpgkey_dir}/${rpmgpgkey_epel} ${ess_repo_url}/${rpmgpgkey_epel}
     
@@ -291,7 +292,7 @@ function preparation() {
 
     # yum, repository
     declare -r yum_pid="/var/run/yum.pid"
-    declare -r ess_repo_url="https://artifactory01.esss.lu.se/artifactory/list/devenv/repositories/repofiles"
+
 
     # ansible 
     local ansible_cfg="/etc/ansible/ansible.cfg";
@@ -572,7 +573,7 @@ function nfs_sever_conf() {
     # 
     # 4.3.7.5. NFS Firewall Configuration
     # NFSv4 is the default version of NFS for Red Hat Enterprise Linux 7 and it only requires port 2049 to be open for TCP. If using NFSv3 then four additional ports are required as explained below.
-    # ⁠Configuring Ports for NFSv3
+    # Configuring Ports for NFSv3
     # The ports used for NFS are assigned dynamically by rpcbind, which can cause problems when creating firewall rules. To simplify this process, use the /etc/sysconfig/nfs file to specify which ports are to be used:
 
     # MOUNTD_PORT — TCP and UDP port for mountd (rpc.mountd)
@@ -590,7 +591,7 @@ function nfs_sever_conf() {
     # 4) run the following commands 
     # The following commnad open only "tcp 2049" for NFS4 defined in /lib/firewalld/services/nfs.xml
     ${SUDO_CMD} firewall-cmd --zone=public --permanent --add-service=nfs;
-    ⁠${SUDO_CMD} firewall-cmd --zone=public --permanent --add-service=mountd;
+    ${SUDO_CMD} firewall-cmd --zone=public --permanent --add-service=mountd;
     ${SUDO_CMD} firewall-cmd --zone=public --permanent --add-service=rpc-bind;
     ${SUDO_CMD} firewall-cmd --reload;
     
