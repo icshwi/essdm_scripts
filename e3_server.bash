@@ -253,7 +253,31 @@ function print_tftp_rule() {
 	   "}"; 
 }
 
+declare -gr yum_repo_dir="/etc/yum.repos.d"
+declare -gr rpmgpgkey_dir="/etc/pki/rpm-gpg"
+declare -gr repo_centos="CentOS-Base.repo"
+declare -gr repo_epel="epel-19012016.repo"
+declare -gr rpmgpgkey_epel="RPM-GPG-KEY-EPEL-7"
 
+
+function cleanup_repos() {
+    
+    # Necessary to clean up the existent CentOS repositories
+    # 
+    # ${SUDO_CMD} rm -rf ${yum_repo_dir}/*  
+    # ${SUDO_CMD} rm -rf ${rpmgpgkey_dir}/${rpmgpgkey_epel}
+        
+    ${SUDO_CMD} find ${yum_repo_dir} -mindepth 1 -maxdepth 1 -exec rm -rf '{}' \;
+    ${SUDO_CMD} rm -rf ${rpmgpgkey_dir}/${rpmgpgkey_epel}
+    
+    # Download the ESS customized repository files and its RPM GPG KEY file
+    #
+    ${SUDO_CMD} curl \
+		-o ${yum_repo_dir}/${repo_centos}     ${ess_repo_url}/${repo_centos} \
+		-o ${yum_repo_dir}/${repo_epel}       ${ess_repo_url}/${repo_epel} \
+		-o ${rpmgpgkey_dir}/${rpmgpgkey_epel} ${ess_repo_url}/${rpmgpgkey_epel}
+    
+}
 # Specific : preparation
 #
 # Require Global vairable
@@ -267,11 +291,6 @@ function preparation() {
 
     # yum, repository
     declare -r yum_pid="/var/run/yum.pid"
-    declare -r yum_repo_dir="/etc/yum.repos.d"
-    declare -r rpmgpgkey_dir="/etc/pki/rpm-gpg"
-    declare -r repo_centos="CentOS-Base.repo"
-    declare -r repo_epel="epel-19012016.repo"
-    declare -r rpmgpgkey_epel="RPM-GPG-KEY-EPEL-7"
     declare -r ess_repo_url="https://artifactory01.esss.lu.se/artifactory/list/devenv/repositories/repofiles"
 
     # ansible 
@@ -286,20 +305,7 @@ function preparation() {
 	${SUDO_CMD} kill -9 $(cat ${yum_pid})
     fi	
 
-    # Necessary to clean up the existent CentOS repositories
-    # 
-    # ${SUDO_CMD} rm -rf ${yum_repo_dir}/*  
-    # ${SUDO_CMD} rm -rf ${rpmgpgkey_dir}/${rpmgpgkey_epel}
-        
-    ${SUDO_CMD} find ${yum_repo_dir} -mindepth 1 -maxdepth 1 -exec rm -rf '{}' \;
-    ${SUDO_CMD} rm -rf ${rpmgpgkey_dir}/${rpmgpgkey_epel}
-    
-    # Download the ESS customized repository files and its RPM GPG KEY file
-    #
-    ${SUDO_CMD} curl \
-		-o ${yum_repo_dir}/${repo_centos}     ${ess_repo_url}/CentOS-Vault-7.1.1503.repo \
-		-o ${yum_repo_dir}/${repo_epel}       ${ess_repo_url}/${repo_epel} \
-		-o ${rpmgpgkey_dir}/${rpmgpgkey_epel} ${ess_repo_url}/${rpmgpgkey_epel}
+    cleanup_repos
     
     # Install "git and ansible" and logrotate for real works
     # 
@@ -623,12 +629,8 @@ git_clone
 
 #
 #
+declare -i tag_cnt=${1};
 
-declare -i tag_cnt=0;
-# no set n_tags, set default 10
-if [[ ${tag_cnt} -eq 0 ]]; then
-    tag_cnt=${1};
-fi
 
 pushd ${SC_GIT_SRC_DIR}
 #
@@ -663,11 +665,8 @@ nfs_sever_conf
 # # #
 # # #
 # # #yum_gui
-yum_extra
-if [ "$?" != "0" ]; then
-    printf_ferr "yum_extra";
-fi
-# #
+#yum_extra
+
 
 if [[ ${GUI_STATUS} = "inactive" ]]; then
    printf "\n>>>>>>>> NO USER INTERFACE  <<<<<<<< \n* One should wait for rsync EPICS processe \n  in order to check the ESS EPICS Environment.\n  tail -n 10 -f ${RSYNC_EPICS_LOG}\n\n";
