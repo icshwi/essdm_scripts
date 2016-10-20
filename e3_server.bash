@@ -3,7 +3,7 @@
 #  Copyright (c) 2016 Jeong Han Lee
 #  Copyright (c) 2016 European Spallation Source ERIC
 #
-#  The dm_setup.bash is free software: you can redistribute
+#  The program is free software: you can redistribute
 #  it and/or modify it under the terms of the GNU General Public License
 #  as published by the Free Software Foundation, either version 2 of the
 #  License, or any newer version.
@@ -16,13 +16,14 @@
 #  You should have received a copy of the GNU General Public License along with
 #  this program. If not, see https://www.gnu.org/licenses/gpl-2.0.txt
 #
-# Shell  : dm_setup.bash
 # Author : Jeong Han Lee
 # email  : han.lee@esss.se
 # Date   : 
-# version : 0.9.6
+# version : 0.0.1
 #
 # http://www.gnu.org/software/bash/manual/bashref.html#Bash-Builtins
+
+set -euo pipefail
 
 
 # 
@@ -57,7 +58,6 @@ function printf_tee() {
 
     local input=${1};
     local target=${2};
-    local command="";
     # If target exists, it will be overwritten.
     ${SUDO_CMD} printf "%s" "${input}" | ${SUDO_CMD} tee "${target}";
 };
@@ -215,7 +215,7 @@ function git_selection() {
 # Specific only for this script : Global vairables - readonly
 #
 declare -gr SUDO_CMD="sudo"
-declare -g  ANSIBLE_VARS=""
+#declare -gr ANSIBLE_VARS="DEVENV_SSSD=false DEVENV_EEE=local DEVENV_CSS=true DEVENV_OPENXAL=false DEVENV_IPYTHON=false"
 declare -gr RSYNC_EPICS_LOG="/tmp/rsync-epics.log"
 declare -gr RSYNC_STARTUP_LOG="/tmp/rsync-startup.log"
 declare -gr ANSIBLE_LOG="/var/log/ansible.log"
@@ -230,6 +230,28 @@ function print_logrotate_rule() {
     
 }
 
+
+function print_tftp_rule() {
+    # server_args
+    # -4 : ipv4 only
+    # -p : Perform no additional permissions checks above the normal system-provided access controls for the user specified via the --user option.
+    # -s : Change root directory on startup. This means the remote host does not need to pass along the directory as part of the transfer, and may add security. When --secure is specified, exactly one directory should be specified on the command line. The use of this option is recommended for security as well as compatibility with some boot ROMs which cannot be easily made to include a directory name in its request.
+    # -vv :  Increase the logging verbosity of tftpd. This flag can be specified multiple times for even higher verbosity.
+    printf "%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n" \
+	   "service tftp" \
+	   "{" \
+	   "  socket_type  = dgram"              \
+	   "  protocol     = udp"                \
+           "  wait         = yes"                \
+	   "  user         = root"               \
+	   "  server       = /usr/sbin/in.tftpd" \
+	   "  server_args  = -4 -p -s -vv /export"    \
+           "  disable      = no"                 \
+           "  per_source   = 11"                 \
+	   "  cps          = 100 2"              \
+	   "  flags        = IPv4"               \
+	   "}"; 
+}
 
 
 # Specific : preparation
@@ -246,7 +268,7 @@ function preparation() {
     # yum, repository
     declare -r yum_pid="/var/run/yum.pid"
     declare -r yum_repo_dir="/etc/yum.repos.d"
-    declare -r rpmgpgkey_dir="/etc/pki/rpm-gpg/"
+    declare -r rpmgpgkey_dir="/etc/pki/rpm-gpg"
     declare -r repo_centos="CentOS-Base.repo"
     declare -r repo_epel="epel-19012016.repo"
     declare -r rpmgpgkey_epel="RPM-GPG-KEY-EPEL-7"
@@ -256,26 +278,26 @@ function preparation() {
     local ansible_cfg="/etc/ansible/ansible.cfg";
     local ansible_logrotate="/etc/logrotate.d/ansible";
     local ansible_logrotate_rule=$(print_logrotate_rule "${ANSIBLE_LOG}" "${SC_IOCUSER}");
-    local ansilbe_log_init=$(printf "Note that ansible is not running currently,\nPlease wait for it, it will show up here soon....\nThis screen is updated every 2 seconds, to check the ansible log file in %s\n" "${ANSIBLE_LOG}");
+    local ansilbe_log_init=$(printf "Note that ansible is not running currently,\nPlease wait for it, it will show up here soon....\nThis screen is updated every 2 seconds, to check the ansible log file in %s \n\n" "${ANSIBLE_LOG}");
     
     # Somehow, yum is running due to PackageKit, so if so, kill it
     #
     if [[ -e ${yum_pid} ]]; then
 	${SUDO_CMD} kill -9 $(cat ${yum_pid})
     fi	
-    
-    # Remove PackageKit
-    #
-    ${SUDO_CMD} yum -y remove PackageKit 
 
     # Necessary to clean up the existent CentOS repositories
     # 
-    ${SUDO_CMD} rm -rf ${yum_repo_dir}/*  
+    # ${SUDO_CMD} rm -rf ${yum_repo_dir}/*  
+    # ${SUDO_CMD} rm -rf ${rpmgpgkey_dir}/${rpmgpgkey_epel}
+        
+    ${SUDO_CMD} find ${yum_repo_dir} -mindepth 1 -maxdepth 1 -exec rm -rf '{}' \;
     ${SUDO_CMD} rm -rf ${rpmgpgkey_dir}/${rpmgpgkey_epel}
     
     # Download the ESS customized repository files and its RPM GPG KEY file
     #
-    ${SUDO_CMD} curl -o ${yum_repo_dir}/${repo_centos}     ${ess_repo_url}/CentOS-Vault-7.1.1503.repo \
+    ${SUDO_CMD} curl \
+		-o ${yum_repo_dir}/${repo_centos}     ${ess_repo_url}/CentOS-Vault-7.1.1503.repo \
 		-o ${yum_repo_dir}/${repo_epel}       ${ess_repo_url}/${repo_epel} \
 		-o ${rpmgpgkey_dir}/${rpmgpgkey_epel} ${ess_repo_url}/${rpmgpgkey_epel}
     
@@ -295,6 +317,10 @@ function preparation() {
     # Enable the logrotate for ansible log
     
     printf_tee "${ansible_logrotate_rule}" "${ansible_logrotate}";
+
+    # Remove PackageKit
+    #
+    ${SUDO_CMD} yum -y remove PackageKit 
 
     end_func ${func_name};
 }
@@ -361,7 +387,7 @@ function yum_extra(){
     
     checkstr ${SUDO_CMD}
 
-    ${SUDO_CMD} yum -y install emacs screen
+    ${SUDO_CMD} yum -y install emacs tree screen
 
     # Now it is safe to run update by an user, let them do this job.
     
@@ -371,12 +397,12 @@ function yum_extra(){
 }
 
 
-function update_eeelocal_parameters() {
+function update_e3server_parameters() {
 
     local func_name=${FUNCNAME[*]}; ini_func ${func_name};
     checkstr ${SC_GIT_SRC_DIR}; checkstr ${SC_IOCUSER};
 
-    local target_dir=${SC_GIT_SRC_DIR}/roles/EEElocal
+    local target_dir=${SC_GIT_SRC_DIR}/roles/rsync-client
 
     # Replace the default user (ess) with the user who executes this script (whoami)
     printf "... Replace the default user (ess) with \"%s\" in %s\n\n" "${SC_IOCUSER}" "${target_dir}/tasks/main.yml";
@@ -398,14 +424,11 @@ function update_eeelocal_parameters() {
     local rsync_server="rsync://owncloud01.esss.lu.se:80";
 
     # - .git directory should not be in EEE. 
-    # - Does CentOS EEE need ELDK EEE stuffs? (*)
     # - Do we still need SL6-x86_64 - Scientific Linux?
-    # - Why do we have EPICS Base 3.15.2 still?
-    #
     # Anyway, the above list is excluded in the rsync option. ELDK EEE may be considered later, but the others are self-evidence, ICS doesn't need them in
     # EEE. So, save time, save a network traffic.
     # 
-    local rsync_general_option="--recursive --links --perms --times --timeout 120 --exclude='.git/' --exclude='SL6-x86_64/' --exclude='*eldk*/' --exclude='*3.15.2/' ";
+    local rsync_general_option="--recursive --links --perms --times --timeout 120 --exclude='.git/' --exclude='SL6-x86_64/' --exclude='*3.15.2/'  --exclude='modules/tr/' --exclude='modules/tg/' --exclude='ursarojec/' --exclude='environment/1.0.*/' --exclude='environment/1.1.*'  --exclude='environment/1.2.*/'  --exclude='environment/1.3.*/'  --exclude='environment/1.4.*/'  --exclude='environment/1.5.*/'  --exclude='environment/1.6.*/'  --exclude='environment/1.7.*/' ";
 
     local rsync_epics_option="${rsync_general_option} --log-file=${RSYNC_EPICS_LOG} ";
     local rsync_startup_option="${rsync_general_option} --log-file=${RSYNC_STARTUP_LOG} ";
@@ -456,7 +479,7 @@ in ${RSYNC_EPICS_LOG}.
 EOF
     cat > ${target_dir}/files/rsync-epics.service <<EOF
 [Unit]
-Description=Script that syncs epics folder from the EEE server, hacked by dm_setup.bash
+Description=Script that syncs epics folder from the EEE server, hacked by ${SC_SCRIPTNAME}
 
 [Service]
 ExecStart=/usr/bin/bash -c "rsync ${rsync_epics_option} ${rsync_server}/epics /opt/epics --chmod=Dugo=rwx,Fuog=rwx"
@@ -469,7 +492,7 @@ EOF
     
     cat > ${target_dir}/files/rsync-startup.service <<EOF
 [Unit]
-Description=Script that syncs startup folder from the EEE server
+Description=Script that syncs startup folder from the EEE server, hacked by ${SC_SCRIPTNAME}
 
 [Service]
 ExecStart=/usr/bin/bash -c "rsync ${rsync_startup_option} ${rsync_server}/startup /opt/startup --chmod=Dugo=rwx,Fuog=rwx"
@@ -484,359 +507,92 @@ EOF
 }
 
 
-declare -g SSSD_status;
-declare -g EEELOC_status;
-declare -g EEENFS_status;
-declare -g CSS_status;
-declare -g XAL_status;
-declare -g IPY_status;
-declare -g LIGHTDM_status;
-declare -g OPENBOX_status;
-declare -g GNOME_status;
+function print_ferr_exit() {
+    printf "%s doesn't have the proper exit, no way to continue\n" "$1";
+    exit;
+}
 
 
+function tftp_server_conf(){
 
-function debug_whiptail(){
+    local func_name=${FUNCNAME[*]}; ini_func ${func_name};
+    checkstr ${SUDO_CMD};
 
-    local choice;
-    local name=$1;
-    local choices=$2;
-    local exit_status=$3;
+    # we should add the tftp configuration in the ansible area
+
+    # 1) required packages
+    
+    ${SUDO_CMD} yum -y install tftp-server tftp
+
+    # 2) update tftp configuration in /etc/xinetd.d/tftp
+
+    local tftp_rule_file="/etc/xinetd.d/tftp";
+    local tftp_rule=$(print_tftp_rule);
+
+    printf_tee "${tftp_rule}"  "${tftp_rule_tile}";
     printf "\n";
-    for choice in "${choices}"; do
-	printf "%20s : debug\n" "$name";
-	printf "%20s : select %s\n" "$choice";
-	printf "%20s : exit status \n" "$exit_status";
-    done;
+    
+    # 3) start xinetd service
+    #    maybe next centOS release, we might have to change them to systemd
+    
+    ${SUDO_CMD} systemctl start xinetd
+    # TFTP uses 69 port
+    # https://www.digitalocean.com/community/tutorials/how-to-set-up-a-firewall-using-firewalld-on-centos-7
+    #${SUDO_CMD} iptables -I INPUT -p udp --dport 69 -j ACCEPT
+
+    # 4) add the tftp to firewalld as the exclusion
+    #
+    ${SUDO_CMD} firewall-cmd --zone=public --permanent --add-service=tftp;
+    ${SUDO_CMD} firewall-cmd --reload;
+    
+    end_func ${func_name};
 }
 
+function nfs_sever_conf() {
 
-function set_dev_input() {
+    local func_name=${FUNCNAME[*]}; ini_func ${func_name};
+    checkstr ${SUDO_CMD};
 
-    SSSD_status=$1;
-    EEELOC_status=$2;
-    EEENFS_status=$3;
-    CSS_status=$4;
-    XAL_status=$5;
-    IPY_status=$6;
-    LIGHTDM_status=$7;
-    OPENBOX_status=$8;
-    GNOME_status=$9;
+    ## firewall-cmd --zone=public --permanent --list-services
+    ## firewall-cmd --get-services
+
+
+    # If we want to use "NFSv3" to allow IOxOS boards to connect the nfs-server,
+    # we have to do the following things
+    # 1) set the static ports in /etc/sysconfig/nfs
+    # 2) allow the ports via firewall-cmd
     
-}
-
-
-function print_dev_input() {
-
-    printf "SSSD      status : %d\n" "$SSSD_status";
-    printf "EEE local status : %d\n" "$EEELOC_status";
-    printf "EEE nfs   status : %d\n" "$EEENFS_status";
-    printf "CSS       status : %d\n" "$CSS_status";
-    printf "OpenXAL   status : %d\n" "$XAL_status";
-    printf "IPhython  status : %d\n" "$IPY_status";
-    printf "LightDM   status : %d\n" "$LIGHTDM_status";
-    printf "OpenBox   status : %d\n" "$OPENBOX_status";
-    printf "Gnome     status : %d\n" "$GNOME_status";
-
-}
-
-
-function set_ansible_variable() {
-
-    local s_ssd_status="DEVENV_SSSD=";
-    local s_eee_status="DEVENV_EEE=";
-    local s_css_status="DEVENV_CSS=";
-    local s_xal_status="DEVENV_OPENXAL=";
-    local s_ipy_status="DEVENV_IPYTHON=";
-    # TBD
-    local s_gnome_status="";
-    local s_lightdm_status="";
-    local s_openbox_status="";
-
-    local s_space=" ";
-
-
-    if [ $SSSD_status = 0 ]; then
-	s_ssd_status+="false";
-    elif [ $SSSD_status = 1 ]; then
-	s_ssd_status+="true";
-    else
-	printf "Something is not right on %s , and exit\n" "${s_ssd_status}";
-     	exit;
-    fi
-
-    #    mounted/local/absent
-    if   [ $EEELOC_status = 1 ] && [ $EEENFS_status = 0 ]; then
-	s_eee_status+="local";
-    elif [ $EEELOC_status = 0 ] && [ $EEENFS_status = 1 ]; then
-	s_eee_status+="mounted";
-    elif [ $EEELOC_status = 0 ] && [ $EEENFS_status = 0 ]; then
-	s_eee_status+="absent";
-    else
-	printf "Something is not right on %s , and exit\n" "${s_eee_status}";
-     	exit;
-    fi
-    
-    if [ $CSS_status = 0 ]; then
-	s_css_status+="false";
-    elif [ $CSS_status = 1 ]; then
-	s_css_status+="true";
-    else
-	printf "Something is not right on %s , and exit\n" "${s_css_status}";
-     	exit;
-    fi
-	
-    if [ $XAL_status = 0 ]; then
-	s_xal_status+="false";
-    elif [ $XAL_status = 1 ]; then
-	s_xal_status+="true";
-    else
-	printf "Something is not right on %s , and exit\n" "${s_xal_status}";
-     	exit;
-    fi	
-    if [ $IPY_status = 0 ]; then
-	s_ipy_status+="false";
-    elif [ $IPY_status = 1 ]; then
-	s_ipy_status+="true";
-    else
-	printf "Something is not right on %s , and exit\n" "${s_ipy_status}";
-     	exit;
-    fi
-    
-    
-    ANSIBLE_VARS+=${s_ssd_status};
-    ANSIBLE_VARS+=${s_space};
-    ANSIBLE_VARS+=${s_eee_status};
-    ANSIBLE_VARS+=${s_space};
-    ANSIBLE_VARS+=${s_css_status};
-    ANSIBLE_VARS+=${s_space};
-    ANSIBLE_VARS+=${s_xal_status};
-    ANSIBLE_VARS+=${s_space};
-    ANSIBLE_VARS+=${s_ipy_status};
-    printf "%s\n\n" "${ANSIBLE_VARS}";
-    
-    print_dev_input
-}
-
-
-
-function main_menu() {
-
-
-    # 0) ask the purpose of this installation
-    #    *) IOC without UI
-    #    *) IOC with light UI (lightdm, openbox)
-    #    *) IOC with full  UI (default : Gnome3, gdm)
-    #    *) DM  with light UI (ligthdm, openbox)
-    #    *) DM  with full  UI (default: gnome3, gdm)
+    # https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html/Security_Guide/sec-Securing_Services.html#sec-Securing_NFS
     # 
-    # 1) ask the installation optoins:
-    #    *) EEE - nfs
-    #    *) ESS - local
-    #    *) CSS
-    #    *) OpenXAL
-    #    *) LDAP
-    #    *) IPhython
-    #
-    #  2) check the conflict between 0) and 1)
-    #     check HW spec
-    #     tell what is recommended
-    #
-    #  3) transfer this information to ansible input
-    #
-    #  4) execute extra functions to fulfuil the selection
+    # 4.3.7.5. NFS Firewall Configuration
+    # NFSv4 is the default version of NFS for Red Hat Enterprise Linux 7 and it only requires port 2049 to be open for TCP. If using NFSv3 then four additional ports are required as explained below.
+    # ⁠Configuring Ports for NFSv3
+    # The ports used for NFS are assigned dynamically by rpcbind, which can cause problems when creating firewall rules. To simplify this process, use the /etc/sysconfig/nfs file to specify which ports are to be used:
+
+    # MOUNTD_PORT — TCP and UDP port for mountd (rpc.mountd)
+    # STATD_PORT — TCP and UDP port for status (rpc.statd)
+    # LOCKD_TCPPORT — TCP port for nlockmgr (rpc.lockd)
+    # LOCKD_UDPPORT — UDP port nlockmgr (rpc.lockd) 
+
+    # Port numbers specified must not be used by any other service. Configure your firewall to allow the port numbers specified, as well as TCP and UDP port 2049 (NFS).
+    # Run the rpcinfo -p command on the NFS server to see which ports and RPC programs are being used.
+    # 1) edit /etc/sysconfig/nfs
+    # 2) run systemctl restart nfs-config
+    # 3) add the static ports in the exceptions in firewall
     
-    local IOC_without_UI="IOC without UI";
-    local IOC_with_lightUI="IOC with Light UI";
-    local IOC_with_CSSlightUI="IOC and CSS with Light UI";
-    local IOC_with_defaultUI="IOC with Default UI";
-    local DM_with_defaultUI="Default DM with options" ;
 
-    set_dev_input 0 0 0 0 0 0 0 0 0 
-
-    local  main_exitsatus;
-    local  main_choices;
-    local  dm_choices;
-    local  dm_exitstatus;
-
+    # 4) run the following commands 
+    # The following commnad open only "tcp 2049" for NFS4 defined in /lib/firewalld/services/nfs.xml
+    ${SUDO_CMD} firewall-cmd --zone=public --permanent --add-service=nfs;
+    ⁠${SUDO_CMD} firewall-cmd --zone=public --permanent --add-service=mountd;
+    ${SUDO_CMD} firewall-cmd --zone=public --permanent --add-service=rpc-bind;
+    ${SUDO_CMD} firewall-cmd --reload;
     
-    main_cmd=(whiptail --title "ESS Development Machine Configuration" \
-		       --menu  "Please select one of predefined option:" \
-		       16 78 5);
-    
-    main_opt=("${IOC_without_UI}"       "EEE local"
-	      "${IOC_with_lightUI}"     "EEE local with lightdm and openbox"
-	      "${IOC_with_CSSlightUI}"  "EEE local and CSS with lightdm and openbox"
-	      "${IOC_with_defaultUI}"   "EEE local and CSS with gdm and gnome3"
-	      "${DM_with_defaultUI}"    "Select further.... ")
-
-    dm_cmd=(whiptail --title "DM Configurations with GNOME3 and GDM" \
- 		     --checklist "Select preferred options via [SPACE]  "\
-		     20 78 8 );
-    
-    dm_opt=("SSSD"    "Active Directory integration"   OFF
-	    "EEE"     "ESS EPICS Environment"          OFF
-	    "CSS"     "Control System Studio"          OFF
-	    "XAL"     "High Level Application OpenXAL" OFF
-	    "IPhyton" "Ipython Notebook Server"        OFF
-	   )
-
-    e3_cmd=(whiptail --title "Possible EEE configuration" \
-		     --radiolist "Select the EEE configurations via [SPACE] :"\
-		     --nocancel\
-		     15 60 4);
-    
-    e3_opt=("EEEloc"  "Local copied EEE"   ON
-	    "EEEnfs"  "NFS mounted  EEE"  OFF);
-    
-    main_status=0;
-    
-    while [ "$main_status" -eq 0 ];
-    do
-	main_choice=$("${main_cmd[@]}" "${main_opt[@]}" 3>&1 1>&2 2>&3 )
-	main_exitstatus=$?
-
- 	#	debug_whiptail "main" "$main_choice" "$main_exitstatus";
-
- 	if [ $main_exitstatus = 0 ]; then
-	    {
-			    
-	    case "${main_choice}" in
-
-    		"${IOC_without_UI}")
-    		    set_dev_input 0 1 0 0 0 0 0 0 0
-		    main_status=1;
-    		    ;;
-    		"${IOC_with_lightUI}")
-    		    set_dev_input 0 1 0 0 0 0 1 1 0
-		    main_status=1;
-    		    ;;
-		"${IOC_with_CSSlightUI}")
-    		    set_dev_input 0 1 0 1 0 0 1 1 0
-		    main_status=1;
-    		    ;;
-    		"${IOC_with_defaultUI}")
-    		    set_dev_input 0 1 0 1 0 0 0 0 1
-		    main_status=1;
-    		    ;;
-    		"${DM_with_defaultUI}")
-		    # Set Default UI
-    		    set_dev_input 0 0 0 0 0 0 0 0 1
-		    dm_status=0;
-		    while [ "$dm_status" -eq 0 ]; 
-		    do 
-			dm_choices=$("${dm_cmd[@]}" "${dm_opt[@]}" 3>&1 1>&2 2>&3 )
-			dm_exitstatus=$?
-			#		    	debug_whiptail "DM" "${dm_choices}" "${dm_exitstatus}"
-
-			case ${dm_exitstatus} in
-			    0)
-				for dm_choice in $dm_choices; do # for dm_choice in $dm_choices; do
-				    dm_choice=${dm_choice//\"};
-				    # 	#			echo $dm_choice;
-				    case ${dm_choice} in
-					
-					"SSSD")
-		    			    SSSD_status=1;
-				     	    ;;
-		    			"EEE")
-					    e3_status=0;
-					    while [ "$e3_status" -eq 0 ];
-					    do 
-		    				# only one selection
-		    				e3_sel=$("${e3_cmd[@]}" "${e3_opt[@]}" 3>&1 1>&2 2>&3);
-		    				e3_exitstatus=$?
-						#debug_whiptail "E3" "${e3_sel}" "${e3_exitstatus}"
-						
-						case ${e3_exitstatus} in
-						    0)
-							case ${e3_sel//\"} in
-		    		    			    "EEEloc")
-		    		    		     		EEELOC_status=1;
-		    		    				;;
-		    		    			    "EEEnfs")
-		    		    				EEENFS_status=1;
-		    		    				;;
-		    					esac
-							e3_status=1;
-							;;
-						    *)
-							#
-							# don't accept "ESC", and others
-							#
-							e3_status=0;
-							;;
-                                                esac
-                                            done;
-		    			    ;;
-
-                                         "CSS")
-		    			    CSS_status=1;	
-		    			    ;;
-					 
-		    			"XAL")
-		    			    XAL_status=1;
-		    			    ;;
-					
-		    			"IPhyton")
-		    			    IPY_status=1;
-		    			    ;;
-		    		    esac
-				
-			    	done # for dm_choice in $dm_choices; do
-
-				dm_status=1
-				main_status=1
-				;;
-			    *)
-				dm_status=1;
-				main_status=0;
-			    ;;
-			esac
-		    done
-		    ;;
-	    esac
-    
-	    }
-	else # if [ $main_exitstatus = 0 ]; then
-	    {
-	    whiptail --title "ESS Development Machine Configuration" \
- 		     --yesno  "You hit the escape button or select the cancel button, so do you want to terminate the entire dm_setup procedure?" \
-		     --defaultno \
-		     8 78;
- 	    lastmsg_exitstatus=$?;
- 	    if [ $lastmsg_exitstatus = 0 ]; then
-		main_status=1;
-	    else
-		main_status=0;
-	    fi
-	    }
-	fi # [ $main_exitstatus = 0 ]; then
-	#	debug_whiptail "ESCAPE" 0  "${lastmsg_exitstatus}"
-
-    done
-
-
-    set_ansible_variable
-
-    # it is better to ask an user again "is this OK?"
-    # will look for a method later...
+    end_func ${func_name};
 }
 
 
- 
-
-main_menu
-
-# #print_dev_input
-
-# Ask the password in order to do many sudo job, and extended
-# the sudo timeout for another N mins (5 CentOS 7.1, 15 Debian 8)
-# 
-# -v : extend the timeout
-# -S : stdin
-# 
-${SUDO_CMD} -v -S <<< $(whiptail --title "SUDO Password Box" --passwordbox "Enter your password and choose Ok to continue." 10 60 3>&1 1>&2 2>&3);
+${SUDO_CMD} -v
 
 #
 # This "keep sudo" functionality
@@ -851,48 +607,67 @@ do
     kill -0 "$$" || exit;
 done 2>/dev/null &
 
-declare -i tag_cnt=$1;
 
+# we might use $PIPESTATUS instead of ....
 
 preparation
-
 #
 #
-SC_GIT_SRC_NAME="ics-ans-devenv"
+SC_GIT_SRC_NAME="ics-ans-nfsserver"
 SC_GIT_SRC_URL="https://bitbucket.org/europeanspallationsource"
 SC_GIT_SRC_DIR=${SC_TOP}/${SC_GIT_SRC_NAME}
 
 #
 #
 git_clone
+
 #
 #
+
 declare -i tag_cnt=$1;
 
 pushd ${SC_GIT_SRC_DIR}
 #
 #
 git_selection  ${tag_cnt};
-update_eeelocal_parameters
+
+
+update_e3server_parameters
+
+
 is-active-ui
 
+
 ini_func "Ansible Playbook"
-${SUDO_CMD} ansible-playbook -i "localhost," -c local devenv.yml --extra-vars="${ANSIBLE_VARS}"
+${SUDO_CMD} ansible-playbook nfsserver.yml
 end_func "Ansible Playbook"
 #
 
 popd
 
+## tftp
+tftp_server_conf
 
-# #
-# #
-# #yum_gui
+
+## nfs firewall for NFSv4 / NFSv3
+nfs_sever_conf
+
+
+## /export/boot diretory prepration
+## uboot configuration scripts
+
+# # #
+# # #
+# # #yum_gui
 yum_extra
-#
+if [ "$?" != "0" ]; then
+    printf_ferr "yum_extra";
+fi
+# #
 
 if [[ ${GUI_STATUS} = "inactive" ]]; then
-    printf "\n>>>>>>>> NO USER INTERFACE  <<<<<<<< \n* One should wait for rsync EPICS processe \n  in order to check the ESS EPICS Environment.\n  tail -n 10 -f ${RSYNC_EPICS_LOG}\n\n";
-    printf "* One can check the ansible log ${ANSIBLE_LOG}\n  whether the ansible returns OK or not. \n  tail -f ${ANSIBLE_LOG}\n\n";
+   printf "\n>>>>>>>> NO USER INTERFACE  <<<<<<<< \n* One should wait for rsync EPICS processe \n  in order to check the ESS EPICS Environment.\n  tail -n 10 -f ${RSYNC_EPICS_LOG}\n\n";
+   printf "* One can check the ansible log ${ANSIBLE_LOG}\n  whether the ansible returns OK or not. \n  tail -f ${ANSIBLE_LOG}\n\n";
 fi
 
 
