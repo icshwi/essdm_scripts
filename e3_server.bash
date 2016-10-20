@@ -23,6 +23,8 @@
 #
 # http://www.gnu.org/software/bash/manual/bashref.html#Bash-Builtins
 
+set -euo pipefail
+
 
 # 
 # PREFIX : SC_, so declare -p can show them in a place
@@ -56,7 +58,6 @@ function printf_tee() {
 
     local input=${1};
     local target=${2};
-    local command="";
     # If target exists, it will be overwritten.
     ${SUDO_CMD} printf "%s" "${input}" | ${SUDO_CMD} tee "${target}";
 };
@@ -267,7 +268,7 @@ function preparation() {
     # yum, repository
     declare -r yum_pid="/var/run/yum.pid"
     declare -r yum_repo_dir="/etc/yum.repos.d"
-    declare -r rpmgpgkey_dir="/etc/pki/rpm-gpg/"
+    declare -r rpmgpgkey_dir="/etc/pki/rpm-gpg"
     declare -r repo_centos="CentOS-Base.repo"
     declare -r repo_epel="epel-19012016.repo"
     declare -r rpmgpgkey_epel="RPM-GPG-KEY-EPEL-7"
@@ -284,19 +285,19 @@ function preparation() {
     if [[ -e ${yum_pid} ]]; then
 	${SUDO_CMD} kill -9 $(cat ${yum_pid})
     fi	
-    
-    # Remove PackageKit
-    #
-    ${SUDO_CMD} yum -y remove PackageKit 
 
     # Necessary to clean up the existent CentOS repositories
     # 
-    ${SUDO_CMD} rm -rf ${yum_repo_dir}/*  
+    # ${SUDO_CMD} rm -rf ${yum_repo_dir}/*  
+    # ${SUDO_CMD} rm -rf ${rpmgpgkey_dir}/${rpmgpgkey_epel}
+        
+    ${SUDO_CMD} find ${yum_repo_dir} -mindepth 1 -maxdepth 1 -exec rm -rf '{}' \;
     ${SUDO_CMD} rm -rf ${rpmgpgkey_dir}/${rpmgpgkey_epel}
     
     # Download the ESS customized repository files and its RPM GPG KEY file
     #
-    ${SUDO_CMD} curl -o ${yum_repo_dir}/${repo_centos}     ${ess_repo_url}/CentOS-Vault-7.1.1503.repo \
+    ${SUDO_CMD} curl \
+		-o ${yum_repo_dir}/${repo_centos}     ${ess_repo_url}/CentOS-Vault-7.1.1503.repo \
 		-o ${yum_repo_dir}/${repo_epel}       ${ess_repo_url}/${repo_epel} \
 		-o ${rpmgpgkey_dir}/${rpmgpgkey_epel} ${ess_repo_url}/${rpmgpgkey_epel}
     
@@ -316,6 +317,10 @@ function preparation() {
     # Enable the logrotate for ansible log
     
     printf_tee "${ansible_logrotate_rule}" "${ansible_logrotate}";
+
+    # Remove PackageKit
+    #
+    ${SUDO_CMD} yum -y remove PackageKit 
 
     end_func ${func_name};
 }
@@ -519,26 +524,35 @@ function tftp_server_conf(){
     
     ${SUDO_CMD} yum -y install tftp-server tftp
 
-    # 2) update tftp configuration in /etx/xinet.d/tftp
+    # 2) update tftp configuration in /etc/xinetd.d/tftp
 
-    local tftp_rule_file="/etc/xinet.d/tftp";
-    
+    local tftp_rule_file="/etc/xinetd.d/tftp";
     local tftp_rule=$(print_tftp_rule);
-    printf_tee "${tftp_rule}"  "${tftp_rule_tile}";
 
+    printf_tee "${tftp_rule}"  "${tftp_rule_tile}";
+    printf "\n";
+    
+    # 3) start xinetd service
+    #    maybe next centOS release, we might have to change them to systemd
+    
     ${SUDO_CMD} systemctl start xinetd
     # TFTP uses 69 port
     # https://www.digitalocean.com/community/tutorials/how-to-set-up-a-firewall-using-firewalld-on-centos-7
     #${SUDO_CMD} iptables -I INPUT -p udp --dport 69 -j ACCEPT
-    ${SUDO_CMD} firewall-cmd --zone=public --permanent --add-service=tftp
-    ${SUDO_CMD} firewall-cmd --reload
+
+    # 4) add the tftp to firewalld as the exclusion
+    #
+    ${SUDO_CMD} firewall-cmd --zone=public --permanent --add-service=tftp;
+    ${SUDO_CMD} firewall-cmd --reload;
     
     end_func ${func_name};
 }
 
 function nfs_sever_conf() {
+
     local func_name=${FUNCNAME[*]}; ini_func ${func_name};
     checkstr ${SUDO_CMD};
+
     ## firewall-cmd --zone=public --permanent --list-services
     ## firewall-cmd --get-services
 
@@ -562,7 +576,6 @@ function nfs_sever_conf() {
 
     # Port numbers specified must not be used by any other service. Configure your firewall to allow the port numbers specified, as well as TCP and UDP port 2049 (NFS).
     # Run the rpcinfo -p command on the NFS server to see which ports and RPC programs are being used.
-    ⁠
     # 1) edit /etc/sysconfig/nfs
     # 2) run systemctl restart nfs-config
     # 3) add the static ports in the exceptions in firewall
@@ -570,11 +583,10 @@ function nfs_sever_conf() {
 
     # 4) run the following commands 
     # The following commnad open only "tcp 2049" for NFS4 defined in /lib/firewalld/services/nfs.xml
-    ${SUDO_CMD} firewall-cmd --zone=public --permanent --add-service=nfs
-    ${SUDO_CMD} firewall-cmd --zone=public --permanent --add-service=mountd
-    ${SUDO_CMD} firewall-cmd --zone=public --permanent --add-service=rpc-bind
-    ${SUDO_CMD} firewall-cmd --zone=public --reload
-
+    ${SUDO_CMD} firewall-cmd --zone=public --permanent --add-service=nfs;
+    ⁠${SUDO_CMD} firewall-cmd --zone=public --permanent --add-service=mountd;
+    ${SUDO_CMD} firewall-cmd --zone=public --permanent --add-service=rpc-bind;
+    ${SUDO_CMD} firewall-cmd --reload;
     
     end_func ${func_name};
 }
@@ -595,10 +607,10 @@ do
     kill -0 "$$" || exit;
 done 2>/dev/null &
 
+
+# we might use $PIPESTATUS instead of ....
+
 preparation
-if [ "$?" != "0" ]; then
-    printf_ferr "preparation";
-fi
 #
 #
 SC_GIT_SRC_NAME="ics-ans-nfsserver"
@@ -608,9 +620,7 @@ SC_GIT_SRC_DIR=${SC_TOP}/${SC_GIT_SRC_NAME}
 #
 #
 git_clone
-if [ "$?" != "0" ]; then
-    printf_ferr "git_clone";
-fi
+
 #
 #
 
@@ -620,19 +630,13 @@ pushd ${SC_GIT_SRC_DIR}
 #
 #
 git_selection  ${tag_cnt};
-if [ "$?" != "0" ]; then
-    printf_ferr "git_selection";
-fi
+
 
 update_e3server_parameters
-if [ "$?" != "0" ]; then
-    printf_ferr "update_e3server_parameters";
-fi
+
 
 is-active-ui
-if [ "$?" != "0" ]; then
-    printf_ferr "is-active-ui";
-fi
+
 
 ini_func "Ansible Playbook"
 ${SUDO_CMD} ansible-playbook nfsserver.yml
@@ -643,15 +647,11 @@ popd
 
 ## tftp
 tftp_server_conf
-if [ "$?" != "0" ]; then
-    printf_ferr "tftp_server_conf";
-fi
+
 
 ## nfs firewall for NFSv4 / NFSv3
 nfs_sever_conf
-if [ "$?" != "0" ]; then
-    printf_ferr "nfs_sever_conf";
-fi
+
 
 ## /export/boot diretory prepration
 ## uboot configuration scripts
