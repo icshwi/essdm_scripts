@@ -23,7 +23,7 @@
 #
 # http://www.gnu.org/software/bash/manual/bashref.html#Bash-Builtins
 
-set -o pipefail
+set -efo pipefail
 
 
 # 
@@ -285,6 +285,7 @@ function preparation() {
     #
     if [[ -e ${yum_pid} ]]; then
 	${SUDO_CMD} kill -9 $(cat ${yum_pid})
+	${SUDO_CMD} rm -rf ${yum_pid}
     fi
     
     # Necessary to clean up the existent CentOS repositories
@@ -301,8 +302,6 @@ function preparation() {
 		-o ${yum_repo_dir}/${repo_centos}     ${ess_repo_url}/CentOS-Vault-7.1.1503.repo \
 		-o ${yum_repo_dir}/${repo_epel}       ${ess_repo_url}/${repo_epel} \
 		-o ${rpmgpgkey_dir}/${rpmgpgkey_epel} ${ess_repo_url}/${rpmgpgkey_epel}
-    
-    cleanup_repos
     
     # Install "git and ansible" and logrotate for real works
     # 
