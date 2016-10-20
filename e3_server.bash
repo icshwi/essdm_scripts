@@ -531,7 +531,7 @@ function tftp_server_conf(){
     local tftp_rule_file="/etc/xinetd.d/tftp";
     local tftp_rule=$(print_tftp_rule);
 
-    printf_tee "${tftp_rule}"  "${tftp_rule_tile}";
+    printf_tee "${tftp_rule}"  "${tftp_rule_file}";
     printf "\n";
     
     # 3) start xinetd service
