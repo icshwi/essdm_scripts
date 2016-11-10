@@ -211,16 +211,6 @@ function git_selection() {
 }
 
 
-#
-# Specific only for this script : Global vairables - readonly
-#
-declare -gr SUDO_CMD="sudo"
-declare -gr ANSIBLE_VARS="DEVENV_SSSD=false DEVENV_EEE=local DEVENV_CSS=true DEVENV_OPENXAL=false DEVENV_IPYTHON=false"
-declare -gr RSYNC_EPICS_LOG="/tmp/rsync-epics.log"
-declare -gr RSYNC_STARTUP_LOG="/tmp/rsync-startup.log"
-declare -gr ANSIBLE_LOG="/var/log/ansible.log"
-declare -g  GUI_STATUS=""
-
 
 function print_logrotate_rule() {
 
@@ -483,7 +473,46 @@ EOF
     
 }
 
+#
+# Main starts here
+#
+echo "Usage $0: [DEVENV_EEE]"
+echo " DEVENV_EEE  mounted|local|absent"
 
+#DEVENV_SSSD: true/false
+#DEVENV_EEE: mounted/local/absent
+#DEVENV_CSS: true/false
+#DEVENV_OPENXAL: true/false
+#DEVENV_IPYTHON: true/false
+
+# Let user decide what DEVENV_EEE option is used
+DEVENV_EEE="mounted"
+if [ -n "$1" ]; then
+    DEVENV_EEE="$1"
+fi
+
+echo
+echo "DEVENV_SSSD: false"
+echo "DEVENV_EEE: ${DEVENV_EEE}" 
+echo "DEVENV_CSS: true"
+echo "DEVENV_OPENXAL: false"
+echo "DEVENV_IPYTHON: false"
+echo
+echo "Continue?"
+read ans
+if [ "${ans}" != "y" -a "${ans}" != "Y" ]; then
+    exit 1
+fi
+
+#
+# Specific only for this script : Global vairables - readonly
+#
+declare -gr SUDO_CMD="sudo"
+declare -gr ANSIBLE_VARS="DEVENV_SSSD=false DEVENV_EEE=${DEVENV_EEE} DEVENV_CSS=true DEVENV_OPENXAL=false DEVENV_IPYTHON=false"
+declare -gr RSYNC_EPICS_LOG="/tmp/rsync-epics.log"
+declare -gr RSYNC_STARTUP_LOG="/tmp/rsync-startup.log"
+declare -gr ANSIBLE_LOG="/var/log/ansible.log"
+declare -g  GUI_STATUS=""
 
 ${SUDO_CMD} -v
 
@@ -522,7 +551,9 @@ pushd ${SC_GIT_SRC_DIR}
 #
 #
 git_selection  ${tag_cnt};
-update_eeelocal_parameters
+if [ "${DEVENV_EEE}" = "local" ]; then
+    update_eeelocal_parameters
+fi
 is-active-ui
 
 ini_func "Ansible Playbook"
