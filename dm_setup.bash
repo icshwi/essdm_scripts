@@ -41,9 +41,8 @@ declare -gr SC_IOCUSER="$(whoami)"
 function pushd() { builtin pushd "$@" > /dev/null; }
 function popd()  { builtin popd  "$@" > /dev/null; }
 
-
-function ini_func() { sleep 1; printf "\n>>>> You are entering in : %s\n" "${1}"; }
-function end_func() { sleep 1; printf "\n<<<< You are leaving from %s\n" "${1}"; }
+function ini_func() { sleep 1; printf "\n>>>> You are entering in  : %s\n" "${1}"; }
+function end_func() { sleep 1; printf "\n<<<< You are leaving from : %s\n" "${1}"; }
 
 function checkstr() {
     if [ -z "$1" ]; then
@@ -264,18 +263,16 @@ function preparation() {
 	fi
     fi
         
-    # Remove PackageKit
-    #
-    ${SUDO_CMD} yum -y remove PackageKit 
 
     # Necessary to clean up the existent CentOS repositories
-    # 
-    ${SUDO_CMD} rm -rf ${yum_repo_dir}/*  
+    #
+    ${SUDO_CMD} find ${yum_repo_dir} -mindepth 1 -maxdepth 1 -exec rm -rf '{}' \;
     ${SUDO_CMD} rm -rf ${rpmgpgkey_dir}/${rpmgpgkey_epel}
     
     # Download the ESS customized repository files and its RPM GPG KEY file
     #
-    ${SUDO_CMD} curl -o ${yum_repo_dir}/${repo_centos}     ${ess_repo_url}/CentOS-Vault-7.1.1503.repo \
+    ${SUDO_CMD} curl \
+		-o ${yum_repo_dir}/${repo_centos}     ${ess_repo_url}/CentOS-Vault-7.1.1503.repo \
 		-o ${yum_repo_dir}/${repo_epel}       ${ess_repo_url}/${repo_epel} \
 		-o ${rpmgpgkey_dir}/${rpmgpgkey_epel} ${ess_repo_url}/${rpmgpgkey_epel}
     
@@ -296,6 +293,11 @@ function preparation() {
     
     printf_tee "${ansible_logrotate_rule}" "${ansible_logrotate}";
 
+
+    # Remove PackageKit
+    #
+    ${SUDO_CMD} yum -y remove PackageKit;
+    
     end_func ${func_name};
 }
 
@@ -394,25 +396,11 @@ function update_eeelocal_parameters() {
     sed -i  "s/owner=ess/owner=${SC_IOCUSER}/g"   "${target_dir}/tasks/main.yml"
     
   
-    
-    end_func ${func_name};  
-    
-
-}
-
-function update_rsync_ansible() {
-
-    local func_name=${FUNCNAME[*]}; ini_func ${func_name};
-    checkstr ${SC_GIT_SRC_DIR}; checkstr ${SC_IOCUSER};
-    local target_dir=${SC_GIT_SRC_DIR}/roles/EEElocal
-    
   # Replace the default user, and add log files for rsync-epics.service and rsync-startup.service
     printf "... Replace the default user (ess) with \"%s\" in %s \n\n... Add logfiles in %s\n" \
 	   "${SC_IOCUSER}" "${target_dir}/files/rsync-{epics,startup}.service" \
 	   "/tmp/rsync-{epics,startup}.log";
 
-
-    
     local rsync_server="rsync://owncloud01.esss.lu.se:80";
 
     # - .git directory should not be in EEE. 
@@ -499,7 +487,9 @@ EOF
 
     end_func ${func_name};  
     
+
 }
+
 
 #
 # Main starts here
@@ -583,9 +573,7 @@ git_selection
 if [ "${DEVENV_EEE}" = "local" ]; then
     update_eeelocal_parameters
 fi
-# should check it works or not..
 
-update_rsync_ansible
 is-active-ui
 
 ini_func "Ansible Playbook"
