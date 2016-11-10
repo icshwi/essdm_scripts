@@ -355,13 +355,18 @@ function yum_gui(){
 
 function yum_extra(){
     
-    local func_name=${FUNCNAME[*]}
+    local func_name=${FUNCNAME[*]}; ini_func ${func_name};
+    checkstr ${SUDO_CMD};
+    declare -a package_list=();
 
-    ini_func ${func_name}
+    package_list+="emacs tree screen telnet";
+    package_list+=" ";
+    package_list+="xterm xorg-x11-fonts-misc";
+    package_list+=" ";
+    package_list+="net-snmp net-snmp-utils"
+    package_list+=" ";
     
-    checkstr ${SUDO_CMD}
-
-    ${SUDO_CMD} yum -y install emacs screen
+    ${SUDO_CMD} yum -y install ${package_list}; 
 
     # Now it is safe to run update by an user, let them do this job.
     
@@ -521,7 +526,7 @@ echo "DEVENV_CSS: true"
 echo "DEVENV_OPENXAL: false"
 echo "DEVENV_IPYTHON: false"
 echo
-echo "Continue?"
+echo "Continue? [y/Y]"
 read ans
 if [ "${ans}" != "y" -a "${ans}" != "Y" ]; then
     exit 1
