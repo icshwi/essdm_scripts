@@ -251,8 +251,6 @@ function preparation() {
     ${SUDO_CMD} systemctl stop packagekit
     ${SUDO_CMD} systemctl disable packagekit
     
-    declare -r yum_pid="/var/run/yum.pid"
-
     # Somehow, yum is running due to PackageKit, so if so, kill it
     #
     if [[ -e ${yum_pid} ]]; then
