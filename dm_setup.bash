@@ -20,7 +20,7 @@
 # Author : Jeong Han Lee
 # email  : han.lee@esss.se
 # Date   : 
-# version : 0.9.6-rc1
+# version : 0.9.6-rc2
 #
 # http://www.gnu.org/software/bash/manual/bashref.html#Bash-Builtins
 
@@ -491,52 +491,15 @@ EOF
 }
 
 
-#
-# Main starts here
-#
-echo "Usage $0: [DEVENV_EEE]"
-echo " DEVENV_EEE  mounted|local|absent"
-
-#DEVENV_SSSD: true/false
-#DEVENV_EEE: mounted/local/absent
-#DEVENV_CSS: true/false
-#DEVENV_OPENXAL: true/false
-#DEVENV_IPYTHON: true/false
-
-# Let user decide what DEVENV_EEE option is used
-DEVENV_EEE="mounted"
-if [ -n "$1" ]; then
-    DEVENV_EEE="$1"
-fi
-
-echo
-echo "DEVENV_SSSD: false"
-echo "DEVENV_EEE: ${DEVENV_EEE}" 
-echo "DEVENV_CSS: true"
-echo "DEVENV_OPENXAL: false"
-echo "DEVENV_IPYTHON: false"
-echo
-echo "Continue? [y/Y]"
-read ans
-if [ "${ans}" != "y" -a "${ans}" != "Y" ]; then
-    exit 1
-fi
-
-#
-# Specific only for this script : Global vairables - readonly
-#
-declare -gr SUDO_CMD="sudo"
-declare -gr ANSIBLE_VARS="DEVENV_SSSD=false DEVENV_EEE=${DEVENV_EEE} DEVENV_CSS=true DEVENV_OPENXAL=false DEVENV_IPYTHON=false"
-declare -gr RSYNC_EPICS_LOG="/tmp/rsync-epics.log"
-declare -gr RSYNC_STARTUP_LOG="/tmp/rsync-startup.log"
-declare -gr ANSIBLE_LOG="/var/log/ansible.log"
-declare -g  GUI_STATUS=""
-
-
-
+declare -g  DEVENV_EEE="";
+declare -g  ANSIBLE_VARS="";
+declare -g  GUI_STATUS="";
+declare -g  SUDO_PID="";
 
 declare -gr SUDO_CMD="sudo";
-declare -g SUDO_PID="";
+declare -gr RSYNC_EPICS_LOG="/tmp/rsync-epics.log";
+declare -gr RSYNC_STARTUP_LOG="/tmp/rsync-startup.log";
+declare -gr ANSIBLE_LOG="/var/log/ansible.log";
 
 
 function sudo_start() {
@@ -549,6 +512,55 @@ function sudo_start() {
     )&
 }
 
+
+
+# What should we do?
+DO="$1"
+
+case "$DO" in
+
+    nfs)
+	printf "EEE Setup NFS mounted : %s\n" "$DO";
+	DEVENV_EEE="mounted";
+	;;
+    loc)
+	printf "EEE Setup Local disk : %s\n" "$DO";
+	DEVENV_EEE="local";
+	;;
+    no)
+	printf "No EEE setup : %s\n" "$DO";
+	DEVENV_EEE="absent";
+	;;
+    *)
+	echo "">&2
+        echo "usage: $0 <EEE options>" >&2
+        echo >&2
+        echo "  EEE options: " >&2
+	echo ""
+        echo "          nfs : Setup EEE as NFS mounted">&2
+        echo ""
+	echo "          loc : Setup EEE on the local disk through rsync">&2
+	echo ""
+	echo "          no  : No Setup EEE">&2
+        echo ""
+        echo >&2
+	exit 0
+        ;;
+esac
+
+ANSIBLE_VARS="DEVENV_SSSD=false DEVENV_EEE=${DEVENV_EEE} DEVENV_CSS=true DEVENV_OPENXAL=false DEVENV_IPYTHON=false";
+
+printf "%s\n" "${ANSIBLE_VARS}";
+read -p "Do you want to continue (y/n)? " answer
+case ${answer:0:1} in
+    y|Y )
+	printf "Yes, the script is going to ask to you the password ...... \n";
+    ;;
+    * )
+        printf "Stop here.\n";
+	exit;
+    ;;
+esac
 
 
 sudo_start;
@@ -570,6 +582,7 @@ pushd ${SC_GIT_SRC_DIR}
 #
 #
 git_selection
+
 if [ "${DEVENV_EEE}" = "local" ]; then
     update_eeelocal_parameters
 fi
