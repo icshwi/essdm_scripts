@@ -20,7 +20,7 @@
 # Author : Jeong Han Lee
 # email  : han.lee@esss.se
 # Date   : 
-# version : 0.9.5
+# version : 0.9.6-rc1
 #
 # http://www.gnu.org/software/bash/manual/bashref.html#Bash-Builtins
 
@@ -247,13 +247,23 @@ function preparation() {
     local ansible_logrotate="/etc/logrotate.d/ansible";
     local ansible_logrotate_rule=$(print_logrotate_rule "${ANSIBLE_LOG}" "${SC_IOCUSER}");
     local ansilbe_log_init=$(printf "Note that ansible is not running currently,\nPlease wait for it, it will show up here soon....\nThis screen is updated every 2 seconds, to check the ansible log file in %s\n" "${ANSIBLE_LOG}");
+
     
+    ${SUDO_CMD} systemctl stop packagekit
+    ${SUDO_CMD} systemctl disable packagekit
+    
+    declare -r yum_pid="/var/run/yum.pid"
+
     # Somehow, yum is running due to PackageKit, so if so, kill it
     #
     if [[ -e ${yum_pid} ]]; then
 	${SUDO_CMD} kill -9 $(cat ${yum_pid})
-    fi	
-    
+	if [ $? -ne 0 ]; then
+	    printf "Remove the orphan yum pid\n";
+	    ${SUDO_CMD} rm -rf ${yum_pid}
+	fi
+    fi
+        
     # Remove PackageKit
     #
     ${SUDO_CMD} yum -y remove PackageKit 
@@ -374,16 +384,29 @@ function update_eeelocal_parameters() {
     # It is the bad idea to have the same "ess" in everywhere
 
     # is needed to transfer bash variable into sed
-    sed -i~ "s/name=ess/name=${SC_IOCUSER}/g"   "${target_dir}/tasks/main.yml"
+    sed -i~ "s/name=ess/name=${SC_IOCUSER}/g"     "${target_dir}/tasks/main.yml"
     sed -i  "s/a user ess/a user ${SC_IOCUSER}/g" "${target_dir}/tasks/main.yml"
     sed -i  "s/owner=ess/owner=${SC_IOCUSER}/g"   "${target_dir}/tasks/main.yml"
     
-    # Replace the default user, and add log files for rsync-epics.service and rsync-startup.service
+  
+    
+    end_func ${func_name};  
+    
+
+}
+
+function update_rsync_ansible() {
+
+    local func_name=${FUNCNAME[*]}; ini_func ${func_name};
+    checkstr ${SC_GIT_SRC_DIR}; checkstr ${SC_IOCUSER};
+    local target_dir=${SC_GIT_SRC_DIR}/roles/EEElocal
+    
+  # Replace the default user, and add log files for rsync-epics.service and rsync-startup.service
     printf "... Replace the default user (ess) with \"%s\" in %s \n\n... Add logfiles in %s\n" \
 	   "${SC_IOCUSER}" "${target_dir}/files/rsync-{epics,startup}.service" \
 	   "/tmp/rsync-{epics,startup}.log";
 
-    
+
     
     local rsync_server="rsync://owncloud01.esss.lu.se:80";
 
@@ -514,23 +537,26 @@ declare -gr RSYNC_STARTUP_LOG="/tmp/rsync-startup.log"
 declare -gr ANSIBLE_LOG="/var/log/ansible.log"
 declare -g  GUI_STATUS=""
 
-${SUDO_CMD} -v
 
-#
-# This "keep sudo" functionality
-# doesn't work in the no-gui environment (minimal iso and minimal selection)
-# One needs to type ones password twice during the entire setup procedure
-#
 
-while [ true ];
-do
-    ${SUDO_CMD} -n /bin/true;
-    sleep 60;
-    kill -0 "$$" || exit;
-done 2>/dev/null &
 
-declare -i tag_cnt=$1;
+declare -gr SUDO_CMD="sudo";
+declare -g SUDO_PID="";
 
+
+function sudo_start() {
+    ${SUDO_CMD} -v
+    ( while [ true ]; do
+	  ${SUDO_CMD} -n /bin/true;
+	  sleep 60;
+	  kill -0 "$$" || exit;
+      done 2>/dev/null
+    )&
+}
+
+
+
+sudo_start;
 
 preparation
 
@@ -544,13 +570,11 @@ SC_GIT_SRC_DIR=${SC_TOP}/${SC_GIT_SRC_NAME}
 #
 git_clone
 #
-#
-declare -i tag_cnt=$1;
 
 pushd ${SC_GIT_SRC_DIR}
 #
 #
-git_selection  ${tag_cnt};
+git_selection
 if [ "${DEVENV_EEE}" = "local" ]; then
     update_eeelocal_parameters
 fi
@@ -575,6 +599,7 @@ if [[ ${GUI_STATUS} = "inactive" ]]; then
     printf "* One can check the ansible log ${ANSIBLE_LOG}\n  whether the ansible returns OK or not. \n  tail -f ${ANSIBLE_LOG}\n\n";
 fi
 
+${SUDO_CMD} -k;
 
 exit
 
