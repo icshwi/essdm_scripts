@@ -578,6 +578,9 @@ git_selection
 if [ "${DEVENV_EEE}" = "local" ]; then
     update_eeelocal_parameters
 fi
+# should check it works or not..
+
+update_rsync_ansible
 is-active-ui
 
 ini_func "Ansible Playbook"
