@@ -361,7 +361,7 @@ function yum_extra(){
     checkstr ${SUDO_CMD};
     declare -a package_list=();
 
-    package_list+="emacs tree screen telnet";
+    package_list+="emacs tree screen telnet nano";
     package_list+=" ";
     package_list+="xterm xorg-x11-fonts-misc";
     package_list+=" ";
