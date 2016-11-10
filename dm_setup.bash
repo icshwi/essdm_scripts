@@ -306,7 +306,7 @@ function is-active-ui() {
     
     GUI_STATUS="$(systemctl is-active graphical.target)";
 
-    if [[ ${GUI_STATUS} = "active" ]]; then
+    if [[ ${GUI_STATUS} = "active" && "${DEVENV_EEE}" = "local" ]]; then
 	# If a system has the GUI, it returns "active"
 	printf "\n User Interface was detected, \nexecute the monitoring terminal for the EEE Rsync status and install the required packages for them.\n\n";
 	
@@ -602,7 +602,11 @@ yum_extra
 #
 
 if [[ ${GUI_STATUS} = "inactive" ]]; then
-    printf "\n>>>>>>>> NO USER INTERFACE  <<<<<<<< \n* One should wait for rsync EPICS processe \n  in order to check the ESS EPICS Environment.\n  tail -n 10 -f ${RSYNC_EPICS_LOG}\n\n";
+    
+    printf "\n>>>>>>>> NO USER INTERFACE  <<<<<<<< \n";
+    if [[ "${DEVENV_EEE}" = "local" ]];  then
+	printf "* One should wait for rsync EPICS processe \n  in order to check the ESS EPICS Environment.\n  tail -n 10 -f ${RSYNC_EPICS_LOG}\n\n";
+    fi
     printf "* One can check the ansible log ${ANSIBLE_LOG}\n  whether the ansible returns OK or not. \n  tail -f ${ANSIBLE_LOG}\n\n";
 fi
 
