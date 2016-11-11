@@ -20,7 +20,7 @@
 # Author : Jeong Han Lee
 # email  : han.lee@esss.se
 # Date   : 
-# version : 0.9.6-rc2
+# version : 0.9.6
 #
 # http://www.gnu.org/software/bash/manual/bashref.html#Bash-Builtins
 
@@ -611,6 +611,10 @@ if [[ ${GUI_STATUS} = "inactive" ]]; then
 fi
 
 ${SUDO_CMD} -k;
+
+# Remove some directories in ${HOME}
+printf "Remove Music, Pictures, Public, Templates, and Videos directories in ${HOME}.... \n";
+rm -rf ${HOME}/{Music,Pictures,Public,Templates,Videos}; 
 
 exit
 
