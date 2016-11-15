@@ -20,7 +20,7 @@
 # Author : Jeong Han Lee
 # email  : han.lee@esss.se
 # Date   : 
-# version : 0.9.6
+# version : 0.9.7-rc0
 #
 # http://www.gnu.org/software/bash/manual/bashref.html#Bash-Builtins
 
@@ -488,6 +488,18 @@ EOF
 
 }
 
+function update_css_configuration() {
+
+    local func_name=${FUNCNAME[*]}; ini_func ${func_name};
+    local css_diirt_dir="${HOME}/configuration/diirt";
+    
+    mkdir -p ${css_diirt_dir};
+    pushd ${css_diirt_dir};
+    cp -R /opt/cs-studio/configuration/diirt/* ${css_diirt_dir};
+    popd;
+    end_func ${func_name};  
+}
+
 
 declare -g  DEVENV_EEE="";
 declare -g  ANSIBLE_VARS="";
@@ -501,13 +513,16 @@ declare -gr ANSIBLE_LOG="/var/log/ansible.log";
 
 
 function sudo_start() {
-    ${SUDO_CMD} -v
+
+    ${SUDO_CMD} -v;
+    
     ( while [ true ]; do
 	  ${SUDO_CMD} -n /bin/true;
 	  sleep 60;
 	  kill -0 "$$" || exit;
       done 2>/dev/null
-    )&
+    ) &
+    
 }
 
 
@@ -594,10 +609,14 @@ end_func "Ansible Playbook"
 
 popd
 
+#
+# Copy the diirt configuration from /opt/cs-studio/configuation/diirt  to $HOME/configuration/diirt
+#
+update_css_configuration
 
-# #
-# #
-# #yum_gui
+# 
+# 
+# yum_gui
 yum_extra
 #
 
