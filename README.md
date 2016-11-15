@@ -49,6 +49,8 @@ $ curl -L https://raw.githubusercontent.com/jeonghanlee/essdm_scripts/master/dm_
 $ bash dm_setup.bash 
 ```
 
+* Select ONLY 2.2.6-RC2 
+
 ## Reference 
 [1] https://ess-ics.atlassian.net/wiki/display/DE/ESS+physical+DM+setup
 
