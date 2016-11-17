@@ -3,7 +3,7 @@
 #  Copyright (c) 2016 Jeong Han Lee
 #  Copyright (c) 2016 European Spallation Source ERIC
 #
-#  The dm_setup.bash is free software: you can redistribute
+#  The program is free software: you can redistribute
 #  it and/or modify it under the terms of the GNU General Public License
 #  as published by the Free Software Foundation, either version 2 of the
 #  License, or any newer version.
@@ -20,11 +20,8 @@
 # Author : Jeong Han Lee
 # email  : han.lee@esss.se
 # Date   : 
-# version : 0.9.6
+# version : 0.9.7-rc1
 #
-# http://www.gnu.org/software/bash/manual/bashref.html#Bash-Builtins
-
-
 # 
 # PREFIX : SC_, so declare -p can show them in a place
 # 
@@ -35,6 +32,10 @@ declare -gr SC_SCRIPTNAME="$(basename "$SC_SCRIPT")"
 declare -gr SC_TOP="$(dirname "$SC_SCRIPT")"
 declare -gr SC_LOGDATE="$(date +%Y%b%d-%H%M-%S%Z)"
 declare -gr SC_IOCUSER="$(whoami)"
+
+
+declare -gr SUDO_CMD="sudo";
+
 
 # Generic : Redefine pushd and popd to reduce their output messages
 # 
@@ -51,14 +52,11 @@ function checkstr() {
     fi
 }
 
-
 function printf_tee() {
     local input=${1}; local target=${2}; local command="";
     # If target exists, it will be overwritten.
     ${SUDO_CMD} printf "%s" "${input}" | ${SUDO_CMD} tee "${target}";
-};
-
-declare -gr SUDO_CMD="sudo";
+}
 
 function sudo_start() {
     ${SUDO_CMD} -v
@@ -69,8 +67,6 @@ function sudo_start() {
       done 2>/dev/null
     )&
 }
-
-
 
 
 # Generic : git_clone
@@ -364,8 +360,7 @@ function yum_gui(){
 }
 
 
-
-function yum_extra(){
+function packages() {
     
     local func_name=${FUNCNAME[*]}; ini_func ${func_name};
     checkstr ${SUDO_CMD};
@@ -377,10 +372,31 @@ function yum_extra(){
     package_list+=" ";
     package_list+="net-snmp net-snmp-utils"
     package_list+=" ";
-    
+    # carchivetools_setup
+    package_list+="python-twisted-core python-twisted-web numpy";
+    package_list+=" ";
+        
     ${SUDO_CMD} yum -y install ${package_list}; 
 
-    # Now it is safe to run update by an user, let them do this job.
+    end_func ${func_name}
+}
+
+function yum_extra(){
+    
+    local func_name=${FUNCNAME[*]}; ini_func ${func_name};
+    checkstr ${SUDO_CMD};
+    # declare -a package_list=();
+
+    # package_list+="emacs tree screen telnet nano";
+    # package_list+=" ";
+    # package_list+="xterm xorg-x11-fonts-misc";
+    # package_list+=" ";
+    # package_list+="net-snmp net-snmp-utils"
+    # package_list+=" ";
+    
+    # ${SUDO_CMD} yum -y install ${package_list}; 
+
+    # # Now it is safe to run update by an user, let them do this job.
     
     ${SUDO_CMD} yum -y update
     
@@ -425,7 +441,7 @@ function update_eeelocal_parameters() {
     # 
     local rsync_general_option="--recursive --links --perms --times --timeout 120 --exclude='.git/' --exclude='SL6-x86_64/' --exclude='*eldk*/' --exclude='*3.15.2/' ";
 
-    local rsync_epics_option="${rsync_general_option}   --log-file=${RSYNC_EPICS_LOG} ";
+    local rsync_epics_option="${rsync_general_option} --log-file=${RSYNC_EPICS_LOG} ";
     local rsync_startup_option="${rsync_general_option} --log-file=${RSYNC_STARTUP_LOG} ";
 
     #
@@ -446,10 +462,10 @@ function update_eeelocal_parameters() {
     declare -r rsync_epics_logrotate="/etc/logrotate.d/rsync_epics";
     declare -r rsync_startup_logrotate="/etc/logrotate.d/rsync_startup";
 
-    declare rsync_epics_logrotate_rule=$(print_logrotate_rule   "${RSYNC_EPICS_LOG}"   "${SC_IOCUSER}");
+    declare rsync_epics_logrotate_rule=$(print_logrotate_rule "${RSYNC_EPICS_LOG}"   "${SC_IOCUSER}");
     declare rsync_startup_logrotate_rule=$(print_logrotate_rule "${RSYNC_STARTUP_LOG}" "${SC_IOCUSER}");
     
-    printf_tee "${rsync_epics_logrotate_rule}"   "${rsync_epics_logrotate}";
+    printf_tee "${rsync_epics_logrotate_rule}" "${rsync_epics_logrotate}";
     printf_tee "${rsync_startup_logrotate_rule}" "${rsync_startup_logrotate}";
     
     
@@ -903,6 +919,25 @@ function ess_dm_ansible(){
 
 }
 
+function carchivetools_setup() {
+
+    local func_name=${FUNCNAME[*]}; ini_func ${func_name};
+
+    local git_src_url="https://github.com/epicsdeb/";
+    local git_src_name="carchivetools";
+    local git_src_dir=${SC_TOP}/${git_src_name};
+    local tag_name="debian/2.2";
+    
+    git_clone  "${git_src_dir}" "${git_src_url}" "${git_src_name}" "${tag_name}" ;
+
+    pushd $git_src_dir;
+
+    popd
+    end_func ${func_name}
+    
+}
+
+
 main_menu
 
 # #print_dev_input
@@ -919,9 +954,13 @@ sudo_start;
 
 preparation
 
+
 ess_dm_ansible
 
-# #yum_gui
+packages
+
+carchivetools_setup
+
 yum_extra
 #
 
