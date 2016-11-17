@@ -410,9 +410,10 @@ function yum_extra(){
 function update_eeelocal_parameters() {
 
     local func_name=${FUNCNAME[*]}; ini_func ${func_name};
-    checkstr ${SC_GIT_SRC_DIR}; checkstr ${SC_IOCUSER};
+    checkstr ${SC_IOCUSER};
 
-    local target_dir=${SC_GIT_SRC_DIR}/roles/EEElocal
+    local git_src_dir=$1;
+    local target_dir=${git_src_dir}/roles/EEElocal
 
     # Replace the default user (ess) with the user who executes this script (whoami)
     printf "... Replace the default user (ess) with \"%s\" in %s\n\n" "${SC_IOCUSER}" "${target_dir}/tasks/main.yml";
@@ -954,7 +955,7 @@ ${SUDO_CMD} -v -S <<< $(whiptail --title "SUDO Password Box" --passwordbox "Ente
 
 ( while [ true ]; do
       ${SUDO_CMD} -v /bin/true;
-      sleep 60;
+      sleep 30;
       kill -0 "$$" || exit;
   done 2>/dev/null
 )&
