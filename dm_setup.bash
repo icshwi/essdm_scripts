@@ -41,9 +41,8 @@ declare -gr SC_IOCUSER="$(whoami)"
 function pushd() { builtin pushd "$@" > /dev/null; }
 function popd()  { builtin popd  "$@" > /dev/null; }
 
-
-function ini_func() { sleep 1; printf "\n>>>> You are entering in : %s\n" "${1}"; }
-function end_func() { sleep 1; printf "\n<<<< You are leaving from %s\n" "${1}"; }
+function ini_func() { sleep 1; printf "\n>>>> You are entering in  : %s\n" "${1}"; }
+function end_func() { sleep 1; printf "\n<<<< You are leaving from : %s\n" "${1}"; }
 
 function checkstr() {
     if [ -z "$1" ]; then
@@ -54,56 +53,63 @@ function checkstr() {
 
 
 function printf_tee() {
-
-    local input=${1};
-    local target=${2};
-    local command="";
+    local input=${1}; local target=${2}; local command="";
     # If target exists, it will be overwritten.
     ${SUDO_CMD} printf "%s" "${input}" | ${SUDO_CMD} tee "${target}";
 };
 
+declare -gr SUDO_CMD="sudo";
+
+function sudo_start() {
+    ${SUDO_CMD} -v
+    ( while [ true ]; do
+	  ${SUDO_CMD} -n /bin/true;
+	  sleep 60;
+	  kill -0 "$$" || exit;
+      done 2>/dev/null
+    )&
+}
 
 
-# Generic : Global variables for git_clone, git_selection, and others
-# 
-declare -g SC_SELECTED_GIT_SRC=""
-declare -g SC_GIT_SRC_DIR=""
-declare -g SC_GIT_SRC_NAME=""
-declare -g SC_GIT_SRC_URL=""
 
 
 # Generic : git_clone
+# 1.0.3 Tuesday, November  8 18:13:44 CET 2016
 #
 # Required Global Variable
-# - SC_GIT_SRC_DIR  : Input
 # - SC_LOGDATE      : Input
-# - SC_GIT_SRC_URL  : Input
-# - SC_GIT_SRC_NAME : Input
-# 
+
 function git_clone() {
-
-    local func_name=${FUNCNAME[*]}; ini_func ${func_name}
-
-    checkstr ${SC_LOGDATE}
-    checkstr ${SC_GIT_SRC_URL}
-    checkstr ${SC_GIT_SRC_NAME}
     
-    if [[ ! -d ${SC_GIT_SRC_DIR} ]]; then
-	echo "No git source repository in the expected location ${SC_GIT_SRC_DIR}"
+    local func_name=${FUNCNAME[*]}; ini_func ${func_name};
+    
+    local git_src_dir=$1;
+    local git_src_url=$2;
+    local git_src_name=$3;
+    local tag_name=$4;
+    
+    checkstr ${SC_LOGDATE};
+    
+    if [[ ! -d ${git_src_dir} ]]; then
+	printf "No git source repository in the expected location %s\n" "${git_src_dir}";
     else
-	echo "Old git source repository in the expected location ${SC_GIT_SRC_DIR}"
-	echo "The old one is renamed to ${SC_GIT_SRC_DIR}_${SC_LOGDATE}"
-	mv  ${SC_GIT_SRC_DIR} ${SC_GIT_SRC_DIR}_${SC_LOGDATE}
+	printf "Old git source repository in the expected location %s\n" "${git_src_dir}";
+	printf "The old one is renamed to %s_%s\n" "${git_src_dir}" "${SC_LOGDATE}";
+	mv  ${git_src_dir} ${git_src_dir}_${SC_LOGDATE}
     fi
     
     # Alwasy fresh cloning ..... in order to workaround any local 
     # modification in the repository, which was cloned before. 
     #
-    git clone ${SC_GIT_SRC_URL}/${SC_GIT_SRC_NAME}
+    # we need the recursive option in order to build a web based viewer for Archappl
+    if [ -z "$tag_name" ]; then
+	git clone --recursive "${git_src_url}/${git_src_name}" "${git_src_dir}";
+    else
+	git clone --recursive -b "${tag_name}" --single-branch --depth 1 "${git_src_url}/${git_src_name}" "${git_src_dir}";
+    fi
 
-    end_func ${func_name}
+    end_func ${func_name};
 }
-
 
 # Generic : git_selection
 #
@@ -214,7 +220,6 @@ function git_selection() {
 #
 # Specific only for this script : Global vairables - readonly
 #
-declare -gr SUDO_CMD="sudo"
 declare -g  ANSIBLE_VARS=""
 declare -gr RSYNC_EPICS_LOG="/tmp/rsync-epics.log"
 declare -gr RSYNC_STARTUP_LOG="/tmp/rsync-startup.log"
@@ -258,26 +263,33 @@ function preparation() {
     local ansible_logrotate_rule=$(print_logrotate_rule "${ANSIBLE_LOG}" "${SC_IOCUSER}");
     local ansilbe_log_init=$(printf "Note that ansible is not running currently,\nPlease wait for it, it will show up here soon....\nThis screen is updated every 2 seconds, to check the ansible log file in %s\n" "${ANSIBLE_LOG}");
     
+
+    ${SUDO_CMD} systemctl stop packagekit
+    ${SUDO_CMD} systemctl disable packagekit
+    
     # Somehow, yum is running due to PackageKit, so if so, kill it
     #
     if [[ -e ${yum_pid} ]]; then
 	${SUDO_CMD} kill -9 $(cat ${yum_pid})
-    fi	
-    
-    # Remove PackageKit
-    #
-    ${SUDO_CMD} yum -y remove PackageKit 
+	if [ $? -ne 0 ]; then
+	    printf "Remove the orphan yum pid\n";
+	    ${SUDO_CMD} rm -rf ${yum_pid}
+	fi
+    fi
+        
 
     # Necessary to clean up the existent CentOS repositories
-    # 
-    ${SUDO_CMD} rm -rf ${yum_repo_dir}/*  
+    #
+    ${SUDO_CMD} find ${yum_repo_dir} -mindepth 1 -maxdepth 1 -exec rm -rf '{}' \;
     ${SUDO_CMD} rm -rf ${rpmgpgkey_dir}/${rpmgpgkey_epel}
     
     # Download the ESS customized repository files and its RPM GPG KEY file
     #
-    ${SUDO_CMD} curl -o ${yum_repo_dir}/${repo_centos}     ${ess_repo_url}/CentOS-Vault-7.1.1503.repo \
+    ${SUDO_CMD} curl \
+		-o ${yum_repo_dir}/${repo_centos}     ${ess_repo_url}/CentOS-Vault-7.1.1503.repo \
 		-o ${yum_repo_dir}/${repo_epel}       ${ess_repo_url}/${repo_epel} \
 		-o ${rpmgpgkey_dir}/${rpmgpgkey_epel} ${ess_repo_url}/${rpmgpgkey_epel}
+    
     
     # Install "git and ansible" and logrotate for real works
     # 
@@ -355,13 +367,18 @@ function yum_gui(){
 
 function yum_extra(){
     
-    local func_name=${FUNCNAME[*]}
+    local func_name=${FUNCNAME[*]}; ini_func ${func_name};
+    checkstr ${SUDO_CMD};
+    declare -a package_list=();
 
-    ini_func ${func_name}
+    package_list+="emacs tree screen telnet nano";
+    package_list+=" ";
+    package_list+="xterm xorg-x11-fonts-misc";
+    package_list+=" ";
+    package_list+="net-snmp net-snmp-utils"
+    package_list+=" ";
     
-    checkstr ${SUDO_CMD}
-
-    ${SUDO_CMD} yum -y install emacs screen
+    ${SUDO_CMD} yum -y install ${package_list}; 
 
     # Now it is safe to run update by an user, let them do this job.
     
@@ -369,6 +386,7 @@ function yum_extra(){
     
     end_func ${func_name}
 }
+
 
 
 function update_eeelocal_parameters() {
@@ -407,7 +425,7 @@ function update_eeelocal_parameters() {
     # 
     local rsync_general_option="--recursive --links --perms --times --timeout 120 --exclude='.git/' --exclude='SL6-x86_64/' --exclude='*eldk*/' --exclude='*3.15.2/' ";
 
-    local rsync_epics_option="${rsync_general_option} --log-file=${RSYNC_EPICS_LOG} ";
+    local rsync_epics_option="${rsync_general_option}   --log-file=${RSYNC_EPICS_LOG} ";
     local rsync_startup_option="${rsync_general_option} --log-file=${RSYNC_STARTUP_LOG} ";
 
     #
@@ -482,6 +500,22 @@ EOF
     end_func ${func_name};  
     
 }
+
+
+# Copy the diirt configuration from /opt/cs-studio/configuation/diirt  to $HOME/configuration/diirt
+#
+function update_css_configuration() {
+
+    local func_name=${FUNCNAME[*]}; ini_func ${func_name};
+    local css_diirt_dir="${HOME}/configuration/diirt";
+    
+    mkdir -p ${css_diirt_dir};
+    pushd ${css_diirt_dir};
+    cp -R /opt/cs-studio/configuration/diirt/* ${css_diirt_dir};
+    popd;
+    end_func ${func_name};  
+}
+
 
 
 declare -g SSSD_status;
@@ -698,11 +732,10 @@ function main_menu() {
 
  	#	debug_whiptail "main" "$main_choice" "$main_exitstatus";
 
- 	if [ $main_exitstatus = 0 ]; then
-	    {
-			    
+ 	if [ $main_exitstatus = 0 ]; then 
+	    
 	    case "${main_choice}" in
-
+		
     		"${IOC_without_UI}")
     		    set_dev_input 0 1 0 0 0 0 0 0 0
 		    main_status=1;
@@ -728,14 +761,12 @@ function main_menu() {
 			dm_choices=$("${dm_cmd[@]}" "${dm_opt[@]}" 3>&1 1>&2 2>&3 )
 			dm_exitstatus=$?
 			#		    	debug_whiptail "DM" "${dm_choices}" "${dm_exitstatus}"
-
 			case ${dm_exitstatus} in
 			    0)
 				for dm_choice in $dm_choices; do # for dm_choice in $dm_choices; do
 				    dm_choice=${dm_choice//\"};
 				    # 	#			echo $dm_choice;
 				    case ${dm_choice} in
-					
 					"SSSD")
 		    			    SSSD_status=1;
 				     	    ;;
@@ -747,6 +778,26 @@ function main_menu() {
 		    				e3_sel=$("${e3_cmd[@]}" "${e3_opt[@]}" 3>&1 1>&2 2>&3);
 		    				e3_exitstatus=$?
 						#debug_whiptail "E3" "${e3_sel}" "${e3_exitstatus}"
+						# case ${e3_exitstatus} in
+						#     0)
+						# 	e3_selection=${e3_sel//\"};
+						# 	e3_local="EEEloc";
+						# 	e3_nfs="EEEnfs";
+						# 	if test "${e3_selection#*$e3_local}" != "$e3_selection" ; then
+						# 	    EEELOC_status=1;
+						# 	elif test "${e3_selection#*$e3_nfs}" != "$e3_selection" ; then
+						# 	    EEENFS_status=1;
+						# 	else
+						# 	    printf "Not acceptable, exit\n";
+						# 	    exit;
+		    		    		# 	fi
+						# 	e3_status=1;
+						# 	;;
+						    
+						#     *)
+						# 	e3_status=0;
+						# 	;; 
+						# esac
 						
 						case ${e3_exitstatus} in
 						    0)
@@ -761,45 +812,40 @@ function main_menu() {
 							e3_status=1;
 							;;
 						    *)
-							#
-							# don't accept "ESC", and others
-							#
 							e3_status=0;
 							;;
-                                                esac
-                                            done;
-		    			    ;;
-
-                                         "CSS")
-		    			    CSS_status=1;	
-		    			    ;;
-					 
-		    			"XAL")
-		    			    XAL_status=1;
-		    			    ;;
+						esac
+					    done;
+					    ;;
 					
-		    			"IPhyton")
-		    			    IPY_status=1;
-		    			    ;;
-		    		    esac
+					"CSS")
+					    CSS_status=1;	
+					    ;;
+					
+					"XAL")
+					    XAL_status=1;
+					    ;;
+					
+					"IPhyton")
+					    IPY_status=1;
+					    ;;
+				    esac # ${dm_choice} in
+    
+				done # for dm_choice in $dm_choices; do
 				
-			    	done # for dm_choice in $dm_choices; do
-
 				dm_status=1
 				main_status=1
 				;;
 			    *)
 				dm_status=1;
 				main_status=0;
-			    ;;
-			esac
-		    done
+				;;
+			esac # 	case ${dm_exitstatus} in
+		    done     # while [ "$dm_status" -eq 0 ]; 
 		    ;;
-	    esac
-    
-	    }
-	else # if [ $main_exitstatus = 0 ]; then
-	    {
+	    esac #  case "${main_choice}" in
+
+	else  # if [ $main_exitstatus = 0 ]; then
 	    whiptail --title "ESS Development Machine Configuration" \
  		     --yesno  "You hit the escape button or select the cancel button, so do you want to terminate the entire dm_setup procedure?" \
 		     --defaultno \
@@ -810,21 +856,52 @@ function main_menu() {
 	    else
 		main_status=0;
 	    fi
-	    }
+
 	fi # [ $main_exitstatus = 0 ]; then
 	#	debug_whiptail "ESCAPE" 0  "${lastmsg_exitstatus}"
-
+	
     done
-
-
+    
+    
     set_ansible_variable
-
+    
     # it is better to ask an user again "is this OK?"
     # will look for a method later...
 }
-
-
  
+
+function ess_dm_ansible(){
+    
+    local func_name=${FUNCNAME[*]}; ini_func ${func_name};
+
+    local git_src_url="https://bitbucket.org/europeanspallationsource";
+    local git_src_name="ics-ans-devenv";
+    local git_src_dir=${SC_TOP}/${git_src_name};
+
+    git_clone  "${git_src_dir}" "${git_src_url}" "${git_src_name}";
+
+    pushd $git_src_dir;
+
+    git_selection 
+
+    if [ $EEELOC_status = 1 ] && [ $EEENFS_status = 0 ]; then
+	update_eeelocal_parameters
+    fi
+
+    is-active-ui
+
+    ${SUDO_CMD} ansible-playbook -i "localhost," -c local devenv.yml --extra-vars="${ANSIBLE_VARS}"
+
+    popd
+
+    #
+    if [ $CSS_status = 1 ]; then
+	update_css_configuration
+    fi
+    
+    end_func ${func_name}
+
+}
 
 main_menu
 
@@ -838,63 +915,28 @@ main_menu
 # 
 ${SUDO_CMD} -v -S <<< $(whiptail --title "SUDO Password Box" --passwordbox "Enter your password and choose Ok to continue." 10 60 3>&1 1>&2 2>&3);
 
-#
-# This "keep sudo" functionality
-# doesn't work in the no-gui environment (minimal iso and minimal selection)
-# One needs to type ones password twice during the entire setup procedure
-#
-
-while [ true ];
-do
-    ${SUDO_CMD} -n /bin/true;
-    sleep 60;
-    kill -0 "$$" || exit;
-done 2>/dev/null &
-
-declare -i tag_cnt=$1;
-
+sudo_start;
 
 preparation
 
-#
-#
-SC_GIT_SRC_NAME="ics-ans-devenv"
-SC_GIT_SRC_URL="https://bitbucket.org/europeanspallationsource"
-SC_GIT_SRC_DIR=${SC_TOP}/${SC_GIT_SRC_NAME}
+ess_dm_ansible
 
-#
-#
-git_clone
-#
-#
-declare -i tag_cnt=$1;
-
-pushd ${SC_GIT_SRC_DIR}
-#
-#
-git_selection  ${tag_cnt};
-update_eeelocal_parameters
-is-active-ui
-
-ini_func "Ansible Playbook"
-${SUDO_CMD} ansible-playbook -i "localhost," -c local devenv.yml --extra-vars="${ANSIBLE_VARS}"
-end_func "Ansible Playbook"
-#
-
-popd
-
-
-# #
-# #
 # #yum_gui
 yum_extra
 #
 
 if [[ ${GUI_STATUS} = "inactive" ]]; then
-    printf "\n>>>>>>>> NO USER INTERFACE  <<<<<<<< \n* One should wait for rsync EPICS processe \n  in order to check the ESS EPICS Environment.\n  tail -n 10 -f ${RSYNC_EPICS_LOG}\n\n";
+    printf "\n>>>>>>>> NO USER INTERFACE  <<<<<<<< \n"
+    if [ $EEELOC_status = 1 ] && [ $EEENFS_status = 0 ]; then
+	printf "* One should wait for rsync EPICS processe \n  in order to check the ESS EPICS Environment.\n  tail -n 10 -f ${RSYNC_EPICS_LOG}\n\n";
+    fi
+    
     printf "* One can check the ansible log ${ANSIBLE_LOG}\n  whether the ansible returns OK or not. \n  tail -f ${ANSIBLE_LOG}\n\n";
 fi
 
+# Remove some directories in ${HOME}
+printf "Remove Music, Pictures, Public, Templates, and Videos directories in ${HOME}.... \n";
+rm -rf ${HOME}/{Music,Pictures,Public,Templates,Videos};
 
 exit
 
