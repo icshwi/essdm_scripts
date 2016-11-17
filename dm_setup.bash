@@ -368,8 +368,6 @@ function packages() {
     checkstr ${SUDO_CMD};
     declare -a package_list=();
 
-    sudo_start
-    
     package_list+="emacs tree screen telnet nano";
     package_list+=" ";
     package_list+="xterm xorg-x11-fonts-misc";
@@ -390,7 +388,6 @@ function yum_extra(){
     local func_name=${FUNCNAME[*]}; ini_func ${func_name};
     checkstr ${SUDO_CMD};
     # declare -a package_list=();
-    sudo_start
     
     # package_list+="emacs tree screen telnet nano";
     # package_list+=" ";
@@ -899,8 +896,6 @@ function ess_dm_ansible(){
     local git_src_name="ics-ans-devenv";
     local git_src_dir=${SC_TOP}/${git_src_name};
 
-    sudo_start
-    
     git_clone  "${git_src_dir}" "${git_src_url}" "${git_src_name}";
 
     pushd $git_src_dir;
@@ -908,7 +903,7 @@ function ess_dm_ansible(){
     git_selection 
 
     if [ $EEELOC_status = 1 ] && [ $EEENFS_status = 0 ]; then
-	update_eeelocal_parameters
+	update_eeelocal_parameters ${git_src_dir}
     fi
 
     is-active-ui
