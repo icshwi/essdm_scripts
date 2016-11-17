@@ -957,7 +957,13 @@ main_menu
 # 
 ${SUDO_CMD} -v -S <<< $(whiptail --title "SUDO Password Box" --passwordbox "Enter your password and choose Ok to continue." 10 60 3>&1 1>&2 2>&3);
 
-sudo_start;
+( while [ true ]; do
+      ${SUDO_CMD} -v /bin/true;
+      sleep 60;
+      kill -0 "$$" || exit;
+  done 2>/dev/null
+)&
+    
 
 preparation
 
