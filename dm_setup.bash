@@ -319,7 +319,9 @@ function is-active-ui() {
 	printf "\n User Interface was detected, \nexecute the monitoring terminal for the EEE Rsync status and install the required packages for them.\n\n";
 	
 	${SUDO_CMD} yum -y install xterm xorg-x11-fonts-misc
-	nice xterm -title "EEE rsync status" -geometry 140x15+0+0   -e "nice watch -n 2 tail -n 10 ${RSYNC_EPICS_LOG}"&
+	if [ $EEELOC_status = 1 ] && [ $EEENFS_status = 0 ]; then
+	    nice xterm -title "EEE rsync status" -geometry 140x15+0+0   -e "nice watch -n 2 tail -n 10 ${RSYNC_EPICS_LOG}"&
+	fi
 	nice xterm -title "ANSIBLE   status" -geometry 140x15+0+190 -e "nice watch -n 2 tail -n 10 ${ANSIBLE_LOG}"&
     else
 	# If a system has the NO GUI, it returns "inactive"
@@ -366,6 +368,8 @@ function packages() {
     checkstr ${SUDO_CMD};
     declare -a package_list=();
 
+    sudo_start
+    
     package_list+="emacs tree screen telnet nano";
     package_list+=" ";
     package_list+="xterm xorg-x11-fonts-misc";
@@ -386,7 +390,8 @@ function yum_extra(){
     local func_name=${FUNCNAME[*]}; ini_func ${func_name};
     checkstr ${SUDO_CMD};
     # declare -a package_list=();
-
+    sudo_start
+    
     # package_list+="emacs tree screen telnet nano";
     # package_list+=" ";
     # package_list+="xterm xorg-x11-fonts-misc";
@@ -894,6 +899,8 @@ function ess_dm_ansible(){
     local git_src_name="ics-ans-devenv";
     local git_src_dir=${SC_TOP}/${git_src_name};
 
+    sudo_start
+    
     git_clone  "${git_src_dir}" "${git_src_url}" "${git_src_name}";
 
     pushd $git_src_dir;
