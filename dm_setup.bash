@@ -57,7 +57,9 @@ function printf_tee() {
 }
 
 function sudo_start() {
-    ${SUDO_CMD} -v
+    # -v : extend the timeout
+    # -S : stdin
+    ${SUDO_CMD} -v -S <<< $(whiptail --title "SUDO Password Box" --passwordbox "Enter your password and choose Ok to continue." 10 60 3>&1 1>&2 2>&3);
     ( while [ true ]; do
 	  ${SUDO_CMD} sleep 30;
 	  kill -0 "$$" || exit;
@@ -906,7 +908,7 @@ function ess_dm_ansible(){
 
     is-active-ui
 
-    ${SUDO_CMD} ansible-playbook -i "localhost," -c local devenv.yml --extra-vars="${ANSIBLE_VARS}"
+    ${SUDO_CMD} -E ansible-playbook -i "localhost," -c local devenv.yml --extra-vars="${ANSIBLE_VARS}"
 
     popd
 
@@ -946,9 +948,7 @@ main_menu
 # -v : extend the timeout
 # -S : stdin
 # 
-${SUDO_CMD} -v -S <<< $(whiptail --title "SUDO Password Box" --passwordbox "Enter your password and choose Ok to continue." 10 60 3>&1 1>&2 2>&3);
-
-sudo_start
+sudo_start 
 
 preparation
 
