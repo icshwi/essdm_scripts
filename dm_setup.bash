@@ -20,10 +20,8 @@
 # Author : Jeong Han Lee
 # email  : han.lee@esss.se
 # Date   : 
-# version : 0.9.7-rc1
+# version : 0.9.7-rc2
 #
-# 
-# PREFIX : SC_, so declare -p can show them in a place
 # 
 # Generic : Global vaiables - readonly
 #
@@ -35,7 +33,7 @@ declare -gr SC_IOCUSER="$(whoami)"
 
 
 declare -gr SUDO_CMD="sudo";
-
+declare -g  SUDO_PID="";
 
 # Generic : Redefine pushd and popd to reduce their output messages
 # 
@@ -61,8 +59,7 @@ function printf_tee() {
 function sudo_start() {
     ${SUDO_CMD} -v
     ( while [ true ]; do
-	  ${SUDO_CMD} -n /bin/true;
-	  sleep 60;
+	  ${SUDO_CMD} sleep 30;
 	  kill -0 "$$" || exit;
       done 2>/dev/null
     )&
@@ -872,15 +869,15 @@ function main_menu() {
  	    lastmsg_exitstatus=$?;
  	    if [ $lastmsg_exitstatus = 0 ]; then
 		main_status=1;
+		printf "See you next time!\n"
+		exit;
 	    else
 		main_status=0;
 	    fi
 
 	fi # [ $main_exitstatus = 0 ]; then
-	#	debug_whiptail "ESCAPE" 0  "${lastmsg_exitstatus}"
 	
     done
-    
     
     set_ansible_variable
     
@@ -943,8 +940,6 @@ function carchivetools_setup() {
 
 main_menu
 
-# #print_dev_input
-
 # Ask the password in order to do many sudo job, and extended
 # the sudo timeout for another N mins (5 CentOS 7.1, 15 Debian 8)
 # 
@@ -953,16 +948,9 @@ main_menu
 # 
 ${SUDO_CMD} -v -S <<< $(whiptail --title "SUDO Password Box" --passwordbox "Enter your password and choose Ok to continue." 10 60 3>&1 1>&2 2>&3);
 
-( while [ true ]; do
-      ${SUDO_CMD} -v /bin/true;
-      sleep 30;
-      kill -0 "$$" || exit;
-  done 2>/dev/null
-)&
-    
+sudo_start
 
 preparation
-
 
 ess_dm_ansible
 
