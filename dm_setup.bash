@@ -20,7 +20,7 @@
 # Author : Jeong Han Lee
 # email  : han.lee@esss.se
 # Date   : 
-# version : 0.9.6-rc1
+# version : 0.9.7-rc0
 #
 # http://www.gnu.org/software/bash/manual/bashref.html#Bash-Builtins
 
@@ -251,8 +251,6 @@ function preparation() {
     ${SUDO_CMD} systemctl stop packagekit
     ${SUDO_CMD} systemctl disable packagekit
     
-    declare -r yum_pid="/var/run/yum.pid"
-
     # Somehow, yum is running due to PackageKit, so if so, kill it
     #
     if [[ -e ${yum_pid} ]]; then
@@ -308,7 +306,7 @@ function is-active-ui() {
     
     GUI_STATUS="$(systemctl is-active graphical.target)";
 
-    if [[ ${GUI_STATUS} = "active" ]]; then
+    if [[ ${GUI_STATUS} = "active" && "${DEVENV_EEE}" = "local" ]]; then
 	# If a system has the GUI, it returns "active"
 	printf "\n User Interface was detected, \nexecute the monitoring terminal for the EEE Rsync status and install the required packages for them.\n\n";
 	
@@ -490,65 +488,92 @@ EOF
 
 }
 
+function update_css_configuration() {
 
-#
-# Main starts here
-#
-echo "Usage $0: [DEVENV_EEE]"
-echo " DEVENV_EEE  mounted|local|absent"
-
-#DEVENV_SSSD: true/false
-#DEVENV_EEE: mounted/local/absent
-#DEVENV_CSS: true/false
-#DEVENV_OPENXAL: true/false
-#DEVENV_IPYTHON: true/false
-
-# Let user decide what DEVENV_EEE option is used
-DEVENV_EEE="mounted"
-if [ -n "$1" ]; then
-    DEVENV_EEE="$1"
-fi
-
-echo
-echo "DEVENV_SSSD: false"
-echo "DEVENV_EEE: ${DEVENV_EEE}" 
-echo "DEVENV_CSS: true"
-echo "DEVENV_OPENXAL: false"
-echo "DEVENV_IPYTHON: false"
-echo
-echo "Continue? [y/Y]"
-read ans
-if [ "${ans}" != "y" -a "${ans}" != "Y" ]; then
-    exit 1
-fi
-
-#
-# Specific only for this script : Global vairables - readonly
-#
-declare -gr SUDO_CMD="sudo"
-declare -gr ANSIBLE_VARS="DEVENV_SSSD=false DEVENV_EEE=${DEVENV_EEE} DEVENV_CSS=true DEVENV_OPENXAL=false DEVENV_IPYTHON=false"
-declare -gr RSYNC_EPICS_LOG="/tmp/rsync-epics.log"
-declare -gr RSYNC_STARTUP_LOG="/tmp/rsync-startup.log"
-declare -gr ANSIBLE_LOG="/var/log/ansible.log"
-declare -g  GUI_STATUS=""
+    local func_name=${FUNCNAME[*]}; ini_func ${func_name};
+    local css_diirt_dir="${HOME}/configuration/diirt";
+    
+    mkdir -p ${css_diirt_dir};
+    pushd ${css_diirt_dir};
+    cp -R /opt/cs-studio/configuration/diirt/* ${css_diirt_dir};
+    popd;
+    end_func ${func_name};  
+}
 
 
-
+declare -g  DEVENV_EEE="";
+declare -g  ANSIBLE_VARS="";
+declare -g  GUI_STATUS="";
+declare -g  SUDO_PID="";
 
 declare -gr SUDO_CMD="sudo";
-declare -g SUDO_PID="";
+declare -gr RSYNC_EPICS_LOG="/tmp/rsync-epics.log";
+declare -gr RSYNC_STARTUP_LOG="/tmp/rsync-startup.log";
+declare -gr ANSIBLE_LOG="/var/log/ansible.log";
 
 
 function sudo_start() {
-    ${SUDO_CMD} -v
+
+    ${SUDO_CMD} -v;
+    
     ( while [ true ]; do
 	  ${SUDO_CMD} -n /bin/true;
 	  sleep 60;
 	  kill -0 "$$" || exit;
       done 2>/dev/null
-    )&
+    ) &
+    
 }
 
+
+
+# What should we do?
+DO="$1"
+
+case "$DO" in
+
+    nfs)
+	printf "EEE Setup NFS mounted : %s\n" "$DO";
+	DEVENV_EEE="mounted";
+	;;
+    loc)
+	printf "EEE Setup Local disk : %s\n" "$DO";
+	DEVENV_EEE="local";
+	;;
+    no)
+	printf "No EEE setup : %s\n" "$DO";
+	DEVENV_EEE="absent";
+	;;
+    *)
+	echo "">&2
+        echo "usage: $0 <EEE options>" >&2
+        echo >&2
+        echo "  EEE options: " >&2
+	echo ""
+        echo "          nfs : Setup EEE as NFS mounted">&2
+        echo ""
+	echo "          loc : Setup EEE on the local disk through rsync">&2
+	echo ""
+	echo "          no  : No Setup EEE">&2
+        echo ""
+        echo >&2
+	exit 0
+        ;;
+esac
+
+ANSIBLE_VARS="DEVENV_SSSD=false DEVENV_EEE=${DEVENV_EEE} DEVENV_CSS=true DEVENV_OPENXAL=false DEVENV_IPYTHON=false";
+
+printf "%s\n" "${ANSIBLE_VARS}";
+read -p "Do you want to continue (y/n)? " answer
+case ${answer:0:1} in
+    y|Y )
+	printf "Yes, the script is going to ask to you the password ...... \n";
+    ;;
+    * )
+        printf "Stop here.\n";
+	exit;
+    ;;
+esac
 
 
 sudo_start;
@@ -570,6 +595,7 @@ pushd ${SC_GIT_SRC_DIR}
 #
 #
 git_selection
+
 if [ "${DEVENV_EEE}" = "local" ]; then
     update_eeelocal_parameters
 fi
@@ -583,19 +609,31 @@ end_func "Ansible Playbook"
 
 popd
 
+#
+# Copy the diirt configuration from /opt/cs-studio/configuation/diirt  to $HOME/configuration/diirt
+#
+update_css_configuration
 
-# #
-# #
-# #yum_gui
+# 
+# 
+# yum_gui
 yum_extra
 #
 
 if [[ ${GUI_STATUS} = "inactive" ]]; then
-    printf "\n>>>>>>>> NO USER INTERFACE  <<<<<<<< \n* One should wait for rsync EPICS processe \n  in order to check the ESS EPICS Environment.\n  tail -n 10 -f ${RSYNC_EPICS_LOG}\n\n";
+    
+    printf "\n>>>>>>>> NO USER INTERFACE  <<<<<<<< \n";
+    if [[ "${DEVENV_EEE}" = "local" ]];  then
+	printf "* One should wait for rsync EPICS processe \n  in order to check the ESS EPICS Environment.\n  tail -n 10 -f ${RSYNC_EPICS_LOG}\n\n";
+    fi
     printf "* One can check the ansible log ${ANSIBLE_LOG}\n  whether the ansible returns OK or not. \n  tail -f ${ANSIBLE_LOG}\n\n";
 fi
 
 ${SUDO_CMD} -k;
+
+# Remove some directories in ${HOME}
+printf "Remove Music, Pictures, Public, Templates, and Videos directories in ${HOME}.... \n";
+rm -rf ${HOME}/{Music,Pictures,Public,Templates,Videos}; 
 
 exit
 
