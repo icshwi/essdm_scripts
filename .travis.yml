@@ -1,4 +1,4 @@
 language: bash
 
 script:
-    - bash vdc_setup.bash
+    - bash vdct_setup.bash
