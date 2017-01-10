@@ -561,7 +561,7 @@ case "$DO" in
         ;;
 esac
 
-ANSIBLE_VARS="DEVENV_SSSD=false DEVENV_EEE=${DEVENV_EEE} DEVENV_CSS=true DEVENV_OPENXAL=false DEVENV_IPYTHON=false";
+ANSIBLE_VARS="DEVENV_SSSD=false DEVENV_EEE=${DEVENV_EEE} DEVENV_CSS=false DEVENV_OPENXAL=false DEVENV_IPYTHON=false";
 
 printf "%s\n" "${ANSIBLE_VARS}";
 read -p "Do you want to continue (y/n)? " answer
