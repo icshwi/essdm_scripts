@@ -58,6 +58,7 @@ It will setup the DM 2.2.6-rc1 in your local disk.
 
 ## Installation Example
 Please see the [README.md in DMonVM](./DMonVM/README.md).
+* Note that this example is always out-of-date and only is valid for a reference example. 
 
 ## Issues
 * Mate-Desktop has the dependency issue
