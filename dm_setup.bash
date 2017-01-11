@@ -20,7 +20,7 @@
 # Author : Jeong Han Lee
 # email  : han.lee@esss.se
 # Date   : 
-# version : 0.9.7-rc0
+# version : 0.9.7-rc1
 #
 # http://www.gnu.org/software/bash/manual/bashref.html#Bash-Builtins
 
@@ -41,16 +41,16 @@ declare -gr SC_IOCUSER="$(whoami)"
 function pushd() { builtin pushd "$@" > /dev/null; }
 function popd()  { builtin popd  "$@" > /dev/null; }
 
-function ini_func() { sleep 1; printf "\n>>>> You are entering in  : %s\n" "${1}"; }
-function end_func() { sleep 1; printf "\n<<<< You are leaving from : %s\n" "${1}"; }
 
-function checkstr() {
+function __ini_func() { printf "\n>>>> You are entering in  : %s\n" "${1}"; }
+function __end_func() { printf "\n<<<< You are leaving from : %s\n" "${1}"; }
+
+function __checkstr() {
     if [ -z "$1" ]; then
 	printf "%s : input variable is not defined \n" "${FUNCNAME[*]}"
 	exit 1;
     fi
 }
-
 
 function printf_tee() {
 
@@ -63,151 +63,133 @@ function printf_tee() {
 
 
 
-# Generic : Global variables for git_clone, git_selection, and others
-# 
-declare -g SC_SELECTED_GIT_SRC=""
-declare -g SC_GIT_SRC_DIR=""
-declare -g SC_GIT_SRC_NAME=""
-declare -g SC_GIT_SRC_URL=""
-
 
 # Generic : git_clone
+# 1.0.3 Tuesday, November  8 18:13:44 CET 2016
 #
 # Required Global Variable
-# - SC_GIT_SRC_DIR  : Input
 # - SC_LOGDATE      : Input
-# - SC_GIT_SRC_URL  : Input
-# - SC_GIT_SRC_NAME : Input
-# 
+
 function git_clone() {
-
-    local func_name=${FUNCNAME[*]}; ini_func ${func_name}
-
-    checkstr ${SC_LOGDATE}
-    checkstr ${SC_GIT_SRC_URL}
-    checkstr ${SC_GIT_SRC_NAME}
     
-    if [[ ! -d ${SC_GIT_SRC_DIR} ]]; then
-	echo "No git source repository in the expected location ${SC_GIT_SRC_DIR}"
+    local func_name=${FUNCNAME[*]}; __ini_func ${func_name};
+    
+    local git_src_dir=$1;
+    local git_src_url=$2;
+    local git_src_name=$3;
+    local tag_name=$4;
+    
+    __checkstr ${SC_LOGDATE};
+    
+    if [[ ! -d ${git_src_dir} ]]; then
+	printf "No git source repository in the expected location %s\n" "${git_src_dir}";
     else
-	echo "Old git source repository in the expected location ${SC_GIT_SRC_DIR}"
-	echo "The old one is renamed to ${SC_GIT_SRC_DIR}_${SC_LOGDATE}"
-	mv  ${SC_GIT_SRC_DIR} ${SC_GIT_SRC_DIR}_${SC_LOGDATE}
+	printf "Old git source repository in the expected location %s\n" "${git_src_dir}";
+	printf "The old one is renamed to %s_%s\n" "${git_src_dir}" "${SC_LOGDATE}";
+	mv  ${git_src_dir} ${git_src_dir}_${SC_LOGDATE}
     fi
     
-    # Alwasy fresh cloning ..... in order to workaround any local 
+    # Always fresh cloning ..... in order to workaround any local 
     # modification in the repository, which was cloned before. 
     #
-    git clone ${SC_GIT_SRC_URL}/${SC_GIT_SRC_NAME}
+    # we need the recursive option in order to build a web based viewer for Archappl
+    if [ -z "$tag_name" ]; then
+	git clone --recursive "${git_src_url}/${git_src_name}" "${git_src_dir}";
+    else
+	git clone --recursive -b "${tag_name}" --single-branch --depth 1 "${git_src_url}/${git_src_name}" "${git_src_dir}";
+    fi
 
-    end_func ${func_name}
+    __end_func ${func_name};
 }
 
 
 # Generic : git_selection
 #
-# 1.1.0 : Monday, October 10 09:23:24 CEST 2016
-#
-# Require Global vairable
-# - SC_SELECTED_GIT_SRC  : Output
+# 1.0.4a : Wednesday, January 11 10:02:28 CET 2017
 #
 function git_selection() {
 
-    local func_name=${FUNCNAME[*]}; ini_func ${func_name};
+    local func_name=${FUNCNAME[*]}; __ini_func ${func_name};
 
-    local git_ckoutcmd="";
-    local checked_git_src="";
+    local git_ckoutcmd=""
+    local checked_git_src=""
 
-    declare -i index=0;
-    declare -i master_index=0;
-    declare -i list_size=0;
-    declare -i selected_one=0;
-    declare -a git_src_list=();
+    
+    declare -i index=0
+    declare -i master_index=0
+    declare -i list_size=0
+    declare -i selected_one=0
+    declare -a git_src_list=()
+
     
     local n_tags=${1};
 
     # no set n_tags, set default 10
+    
     if [[ ${n_tags} -eq 0 ]]; then
-	n_tags=10;
+	n_tags=20;
     fi
 
-    git_src_list+=("master");
+    git_src_list+=("master")
 
-    # git_tags=$(git describe --tags `git rev-list --tags --max-count=${n_tags}`);
-    # git_exitstatus=$?
-    # if [ $git_exitstatus = 0 ]; then
-    # 	#
-    # 	# (${}) and ($(command))  are important to separate output as an indiviaul arrar
-    # 	#
-    # 	git_src_list+=(${git_tags});
-    # else
-    # 	# In case, No tags can describe, use git tag instead of git describe
-    # 	#
-    # 	# fatal: No tags can describe '7fce903a82d47dec92012664648cacebdacd88e1'.
-    # 	# Try --always, or create some tags.
-    # doesn't work for CentOS7
-    #    git_src_list+=($(git tag -l --sort=-refname  | head -n${n_tags}))
-    # fi
-
-    git_src_list+=($(git tag -l | sort -r | head -n${n_tags}));
-
+    git_src_list+=($(git tag -l | xargs -I@ git log --format=format:"%ai @%n" -1 @ | sort -r | head -n${n_tags} | awk '{print $4}'))
     
     for tag in "${git_src_list[@]}"
     do
-	printf "%2s: git src %34s\n" "$index" "$tag";
-	let "index = $index + 1";
+	printf "%2s: git src %34s\n" "$index" "$tag"
+	let "index = $index + 1"
     done
-    
-    echo -n "Select master or one of tags which can be built, followed by [ENTER]: "
-    
-    # don't wait for 3 characters 
-    # read -e -n 2 line
+
+    # type [ENTER], 0 is selected as default.
+    echo -n "Select master (0, enter) or one of tags which can be built, followed by [ENTER]: "
+
     read -e line
-    
+   
     # convert a string to an integer?
     # do I need this? 
     # selected_one=${line/.*}
 
-    # Without selection number, type [ENTER], 0 is selected as default.
-    #
-    selected_one=${line};
-    let "list_size = ${#git_src_list[@]} - 1";
+    selected_one=${line}
+    
+    let "list_size = ${#git_src_list[@]} - 1"
     
     if [[ "$selected_one" -gt "$list_size" ]]; then
-	printf "\n>>> Please select one number smaller than %s\n" "${list_size}";
-	exit 1
+	printf "\n>>> Please select one number smaller than %s\n" "${list_size}"
+	exit 1;
     fi
     if [[ "$selected_one" -lt 0 ]]; then
-	printf "\n>>> Please select one number larger than 0\n"; 
-	exit 1
+	printf "\n>>> Please select one number larger than 0\n" 
+	exit 1;
     fi
 
-    SC_SELECTED_GIT_SRC="$(tr -d ' ' <<< ${git_src_list[line]})";
+    SC_SELECTED_GIT_SRC="$(tr -d ' ' <<< ${git_src_list[line]})"
     
-    printf "\n>>> Selected %34s --- \n" "${SC_SELECTED_GIT_SRC}\n";
-
+    printf "\n>>> Selected %34s --- \n" "${SC_SELECTED_GIT_SRC}"
+ 
+    echo ""
     if [ "$selected_one" -ne "$master_index" ]; then
+	git_ckoutcmd="git checkout tags/${SC_SELECTED_GIT_SRC}"
+	$git_ckoutcmd
+	checked_git_src="$(git describe --exact-match --tags)"
+	checked_git_src="$(tr -d ' ' <<< ${checked_git_src})"
 	
-	git_ckoutcmd="git checkout tags/${SC_SELECTED_GIT_SRC}";
-	$git_ckoutcmd;
-
-	checked_git_src="$(git describe --exact-match --tags)";
-	checked_git_src="$(tr -d ' ' <<< ${checked_git_src})";
-	
-	printf "\n>>> Selected : %s --- \n>>> Checkout : %s --- \n" "${SC_SELECTED_GIT_SRC}" "${checked_git_src}";
+	printf "\n>>> Selected : %s --- \n>>> Checkout : %s --- \n" "${SC_SELECTED_GIT_SRC}" "${checked_git_src}"
 	
 	if [ "${SC_SELECTED_GIT_SRC}" != "${checked_git_src}" ]; then
-	    printf "Something is not right, please check your git reposiotry\n";
+	    echo "Something is not right, please check your git reposiotry"
 	    exit 1
 	fi
     else
-	git_ckoutcmd="git checkout ${SC_SELECTED_GIT_SRC}";
-	$git_ckoutcmd;
+	git_ckoutcmd="git checkout ${SC_SELECTED_GIT_SRC}"
+	$git_ckoutcmd
     fi
+
+    git submodule update --init --recursive
     
-    end_func ${func_name};
-    
+    __end_func ${func_name}
+ 
 }
+
 
 
 
@@ -229,8 +211,8 @@ function print_logrotate_rule() {
 
 function preparation() {
     
-    local func_name=${FUNCNAME[*]}; ini_func ${func_name};
-    checkstr ${SUDO_CMD};
+    local func_name=${FUNCNAME[*]}; __ini_func ${func_name};
+    __checkstr ${SUDO_CMD};
 
     # yum, repository
     declare -r yum_pid="/var/run/yum.pid"
@@ -296,13 +278,13 @@ function preparation() {
     #
     ${SUDO_CMD} yum -y remove PackageKit;
     
-    end_func ${func_name};
+    __end_func ${func_name};
 }
 
 
 function is-active-ui() {
 
-    local func_name=${FUNCNAME[*]}; ini_func ${func_name};
+    local func_name=${FUNCNAME[*]}; __ini_func ${func_name};
     
     GUI_STATUS="$(systemctl is-active graphical.target)";
 
@@ -329,16 +311,16 @@ function is-active-ui() {
 	${SUDO_CMD} yum -y install unzip redhat-menus xdg-utils
     fi
 
-    end_func ${func_name};
+    __end_func ${func_name};
 }
 
 function yum_gui(){
 
     local func_name=${FUNCNAME[*]}
 
-    ini_func ${func_name}
+    __ini_func ${func_name}
     
-    checkstr ${SUDO_CMD}
+    __checkstr ${SUDO_CMD}
 
 
     ${SUDO_CMD} yum -y groupinstall "Gnome Desktop"
@@ -348,15 +330,15 @@ function yum_gui(){
     ${SUDO_CMD} systemctl disable gdm.service
     ${SUDO_CMD} systemctl enable lightdm.service
     
-    end_func ${func_name}  
+    __end_func ${func_name}  
 }
 
 
 
 function yum_extra(){
     
-    local func_name=${FUNCNAME[*]}; ini_func ${func_name};
-    checkstr ${SUDO_CMD};
+    local func_name=${FUNCNAME[*]}; __ini_func ${func_name};
+    __checkstr ${SUDO_CMD};
     declare -a package_list=();
 
     package_list+="emacs tree screen telnet nano";
@@ -372,16 +354,15 @@ function yum_extra(){
     
     ${SUDO_CMD} yum -y update
     
-    end_func ${func_name}
+    __end_func ${func_name}
 }
 
 
 function update_eeelocal_parameters() {
 
-    local func_name=${FUNCNAME[*]}; ini_func ${func_name};
-    checkstr ${SC_GIT_SRC_DIR}; checkstr ${SC_IOCUSER};
-
-    local target_dir=${SC_GIT_SRC_DIR}/roles/EEElocal
+    local func_name=${FUNCNAME[*]}; __ini_func ${func_name};  __checkstr ${SC_IOCUSER};
+    local git_src_dir=$1;
+    local target_dir=${git_src_dir}/roles/EEElocal
 
     # Replace the default user (ess) with the user who executes this script (whoami)
     printf "... Replace the default user (ess) with \"%s\" in %s\n\n" "${SC_IOCUSER}" "${target_dir}/tasks/main.yml";
@@ -483,23 +464,22 @@ User=${SC_IOCUSER}
 WantedBy=multi-user.target
 EOF
 
-    end_func ${func_name};  
+    __end_func ${func_name};  
     
 
 }
 
 function update_css_configuration() {
 
-    local func_name=${FUNCNAME[*]}; ini_func ${func_name};
+    local func_name=${FUNCNAME[*]}; __ini_func ${func_name};
     local css_diirt_dir="${HOME}/configuration/diirt";
     
     mkdir -p ${css_diirt_dir};
     pushd ${css_diirt_dir};
     cp -R /opt/cs-studio/configuration/diirt/* ${css_diirt_dir};
     popd;
-    end_func ${func_name};  
+    __end_func ${func_name};  
 }
-
 
 declare -g  DEVENV_EEE="";
 declare -g  ANSIBLE_VARS="";
@@ -580,31 +560,32 @@ sudo_start;
 
 preparation
 
-#
-#
-SC_GIT_SRC_NAME="ics-ans-devenv"
-SC_GIT_SRC_URL="https://bitbucket.org/europeanspallationsource"
-SC_GIT_SRC_DIR=${SC_TOP}/${SC_GIT_SRC_NAME}
+
+devenv_version="2.2.6-rc1"
+git_src_name="ics-ans-devenv";
+git_src_url="https://bitbucket.org/europeanspallationsource";
+git_src_dir=${SC_TOP}/${git_src_name};
+    
 
 #
 #
-git_clone
+git_clone "${git_src_dir}" "${git_src_url}" "${git_src_name}" "${devenv_version}" ; 
 #
 
-pushd ${SC_GIT_SRC_DIR}
+pushd ${git_src_dir}
 #
 #
-git_selection
+# git_selection
 
 if [ "${DEVENV_EEE}" = "local" ]; then
-    update_eeelocal_parameters
+    update_eeelocal_parameters "${git_src_dir}"
 fi
 
 is-active-ui
 
-ini_func "Ansible Playbook"
+__ini_func "Ansible Playbook"
 ${SUDO_CMD} ansible-playbook -i "localhost," -c local devenv.yml --extra-vars="${ANSIBLE_VARS}"
-end_func "Ansible Playbook"
+__end_func "Ansible Playbook"
 #
 
 popd
@@ -612,7 +593,7 @@ popd
 #
 # Copy the diirt configuration from /opt/cs-studio/configuation/diirt  to $HOME/configuration/diirt
 #
-update_css_configuration
+#update_css_configuration
 
 # 
 # 
