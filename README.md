@@ -38,20 +38,18 @@ Download the CentOS 7.1 (1503) as following links :
 ```
 $ curl -L https://git.io/vi8DA -o dm_setup.bash
 ```
-* Long, but it is self-evidence
-```
-$ curl -L https://raw.githubusercontent.com/jeonghanlee/essdm_scripts/master/dm_setup.bash -o dm_setup.bash
-```
 
 ### Execute the script
 
+* Setup the EEE 1.8.2 
 ```
 $ bash dm_setup.bash loc
 ```
 
-It will setup the DM 2.2.6-rc1 in your local disk.
-
-
+* Setup CSS 4.4.1.2
+```
+$ bash css_setup.bash
+```
 
 ## Reference 
 [1] https://ess-ics.atlassian.net/wiki/display/DE/ESS+physical+DM+setup
