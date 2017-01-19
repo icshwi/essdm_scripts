@@ -32,22 +32,17 @@ Download the CentOS 7.1 (1503) as following links :
 
 ### Open an Terminal
 
-### Download the script
-
-* Short, but it has no meaning
-```
-$ curl -L https://git.io/vi8DA -o dm_setup.bash
-```
-
-### Execute the script
+### Download and Execute the script as follows:
 
 * Setup the EEE 1.8.2 
 ```
+$ curl -L https://git.io/vi8DA -o dm_setup.bash
 $ bash dm_setup.bash loc
 ```
 
 * Setup CSS 4.4.1.2
 ```
+$ curl -L https://git.io/vMyeU -o css_setup.bash
 $ bash css_setup.bash
 ```
 
