@@ -20,7 +20,7 @@
 # Author : Jeong Han Lee
 # email  : han.lee@esss.se
 # Date   : 
-# version : 0.9.7-rc1
+# version : 0.9.7-rc2
 #
 # http://www.gnu.org/software/bash/manual/bashref.html#Bash-Builtins
 
@@ -229,6 +229,8 @@ function preparation() {
     local ansible_logrotate_rule=$(print_logrotate_rule "${ANSIBLE_LOG}" "${SC_IOCUSER}");
     local ansilbe_log_init=$(printf "Note that ansible is not running currently,\nPlease wait for it, it will show up here soon....\nThis screen is updated every 2 seconds, to check the ansible log file in %s\n" "${ANSIBLE_LOG}");
 
+
+
     
     ${SUDO_CMD} systemctl stop packagekit
     ${SUDO_CMD} systemctl disable packagekit
@@ -277,6 +279,13 @@ function preparation() {
     # Remove PackageKit
     #
     ${SUDO_CMD} yum -y remove PackageKit;
+
+    #
+    # In order to access the MCH through the USB serial connection
+    # for example, /dev/ttyACM0
+    # the user should be in the dialout group. 
+    #
+    ${SUDO_CMD} usermod -a -G dialout ${SC_IOCUSER}
     
     __end_func ${func_name};
 }
