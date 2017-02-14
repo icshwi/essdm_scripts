@@ -133,13 +133,8 @@ function download_css() {
 #
 cd \${HOME}
 
-VER="\$1"
+"${CSS_GENERIC_DIR}/ESS CS-Studio" "\$@"
 
-if [ -z "\$VER" ]; then
-    VER="${CSS_VERSION}"
-fi
-
-exec "${CSS_GENERIC_DIR}-\${VER}/ESS CS-Studio"
 
 EOF
 
@@ -246,7 +241,8 @@ declare -gr CSS_TOP="/opt";
 declare -gr CSS_VERSION="4.4.1.3";
 declare -gr CSS_GENERIC_NAME="cs-studio";
 declare -gr CSS_GENERIC_DIR=${CSS_TOP}/${CSS_GENERIC_NAME};
-declare -gr CSS_DIR=${CSS_GENERIC_DIR}-${CSS_VERSION}
+#declare -gr CSS_DIR=${CSS_GENERIC_DIR}-${CSS_VERSION}
+declare -gr CSS_DIR=${CSS_GENERIC_DIR}
 declare -gr CSS_TYPE="production"
 declare -gr CSS_DEPLOY_DIR=${CSS_DIR}_${SC_LOGDATE}
 
