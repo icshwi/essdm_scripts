@@ -356,6 +356,9 @@ function yum_extra(){
     package_list+=" ";
     package_list+="net-snmp net-snmp-utils"
     package_list+=" ";
+    ## putty 
+    package_list+="cpan gtk2-devel";
+    package_list+=" ";
     
     ${SUDO_CMD} yum -y install ${package_list}; 
 

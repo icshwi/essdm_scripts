@@ -18,7 +18,7 @@
 # Author : Jeong Han Lee
 # email  : jeonghan.lee@gmail.com
 # Date   : 
-# version : 0.0.1
+# version : 0.0.2
 #
 # 
 #
@@ -34,6 +34,10 @@ set +a
 . ${SC_TOP}/functions
 
 # https://the.earth.li/~sgtatham/putty/latest/putty-0.67.tar.gz
+# CentOS 7.1 1503
+# Required packages 
+# yum install cpan gtk2-devel 
+
 
 function putty_setup_build () {
 
@@ -60,8 +64,11 @@ function putty_setup_build () {
     make -f Makefile.gtk
     #
     # mv only putty binary to /usr/local/bin directory manually.
-    #
-    ${SUDO} mv putty /usr/local/bin/ 
+    # and overwrite an existing file
+
+    printf "\n>>>"
+    printf "\n>>> Now, we are moving the putty to /usr/local/bin manually\n"
+    ${SUDO_CMD} mv --force putty /usr/local/bin/ 
     popd
 
     __end_func ${func_name};
@@ -83,10 +90,11 @@ function MCH_management_network_setup() {
     __end_func ${func_name};
 }
 
+${SUDO_CMD} -v
 
 putty_setup_build
 
-MCH_management_network_setup
+#MCH_management_network_setup
 
 
 exit
