@@ -39,6 +39,28 @@ set +a
 # yum install cpan gtk2-devel 
 
 
+function packages_install() {
+    local func_name=${FUNCNAME[*]}; __ini_func ${func_name};
+    local package_list=();
+
+    package_list+="emacs tree screen telnet nano";
+    package_list+=" ";
+    package_list+="xterm xorg-x11-fonts-misc";
+    package_list+=" ";
+    package_list+="net-snmp net-snmp-utils"
+    package_list+=" ";
+    ## putty 
+    package_list+="cpan gtk2-devel";
+    package_list+=" ";
+    ## ipmi
+    package_list+="ipmitool OpenIPMI";
+    package_list+=" ";
+    
+    ${SUDO_CMD} yum -y install ${package_list}; 
+
+    __end_func ${func_name};
+}
+
 function putty_setup_build () {
 
     local func_name=${FUNCNAME[*]}; __ini_func ${func_name};
@@ -92,9 +114,42 @@ function MCH_management_network_setup() {
 
 ${SUDO_CMD} -v
 
-putty_setup_build
+
 
 #MCH_management_network_setup
+
+
+DO="$1"
+
+
+case "$DO" in     
+
+    pac) 
+	${SUDO_CMD} -v;
+	packages_install;
+	;;
+    putty)
+	${SUDO_CMD} -v;
+	packages_install;
+	putty_setup_build;
+	;;
+    *) 	
+	echo "">&2         
+	echo "usage: $0 <arg>">&2 
+	echo ""
+        echo "          <arg> : info">&2 
+	echo ""
+	echo "          pac   : Linux packages for MTCA systems">&2
+	echo "                  for putty, ipmi, and so on.... ">&2
+        echo "" 
+	echo "          putty : compile putty from git repository ">&2
+	echo "                  ${PUTTY_GIT_URL}/${PUTTY_GIT_NAME}">&2
+	echo "                  tag name : ${PUTTY_GIT_TAG}">&2
+	echo "" 
+    	echo "">&2 	
+	exit 0         
+	;; 
+esac
 
 
 exit

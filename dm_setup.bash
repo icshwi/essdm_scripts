@@ -359,6 +359,9 @@ function yum_extra(){
     ## putty 
     package_list+="cpan gtk2-devel";
     package_list+=" ";
+    ## ipmi
+    package_list+="ipmitool OpenIPMI";
+    package_list+=" ";
     
     ${SUDO_CMD} yum -y install ${package_list}; 
 
