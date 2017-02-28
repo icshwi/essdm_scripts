@@ -18,7 +18,7 @@
 # Author : Jeong Han Lee
 # email  : jeonghan.lee@gmail.com
 # Date   : 
-# version : 0.0.2
+# version : 0.0.3
 #
 # 
 #
@@ -111,10 +111,6 @@ function MCH_management_network_setup() {
 
     __end_func ${func_name};
 }
-
-${SUDO_CMD} -v
-
-
 
 #MCH_management_network_setup
 
