@@ -1,7 +1,7 @@
 #!/bin/bash
 #
-#  Copyright (c) 2016 Jeong Han Lee
-#  Copyright (c) 2016 European Spallation Source ERIC
+#  Copyright (c) 2016 - Present Jeong Han Lee
+#  Copyright (c) 2016 - Present European Spallation Source ERIC
 #
 #  The dm_setup.bash is free software: you can redistribute
 #  it and/or modify it under the terms of the GNU General Public License
@@ -20,7 +20,7 @@
 # Author : Jeong Han Lee
 # email  : han.lee@esss.se
 # Date   : 
-# version : 0.9.7-rc2
+# version : 0.9.8
 #
 # http://www.gnu.org/software/bash/manual/bashref.html#Bash-Builtins
 
@@ -191,13 +191,24 @@ function git_selection() {
 }
 
 
+# /tmp/rsync-startup.log {
+#     daily
+#     rotate 7
+#     create 0664 iocuser iocuser
+#     missingok
+#     notifempty
+#     compress
+#     nodelaycompress
+#     size 1k
+#     su root
+# }
 
 
 function print_logrotate_rule() {
 
     local logfile=${1};
     local user=${2};
-    printf "%s {\nmissingok\nnotifempty\nsize 100k\nyearly\ncreate 0666 %s %s\n}" "${logfile}" "${user}" "${user}";
+    printf "%s {\ndaily\nrotate 7\ncreate 0664 %s %s\nmissingok\nnotifempty\ncompress\nnodelaycompress\nsize 1k\nsu root\n}" "${logfile}" "${user}" "${user}";
     
 }
 
