@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 #  Copyright (c) 2016 Jeong Han Lee
-#  Copyright (c) 2016 European Spallation Source ERIC
+#  Copyright (c) 2016 - Present European Spallation Source ERIC
 #
 #  The dm_setup.bash is free software: you can redistribute
 #  it and/or modify it under the terms of the GNU General Public License
@@ -20,7 +20,7 @@
 # Author : Jeong Han Lee
 # email  : han.lee@esss.se
 # Date   : 
-# version : 0.9.7-rc2
+# version : 0.9.7
 #
 # http://www.gnu.org/software/bash/manual/bashref.html#Bash-Builtins
 
@@ -354,7 +354,7 @@ function yum_extra(){
     package_list+=" ";
     package_list+="xterm xorg-x11-fonts-misc";
     package_list+=" ";
-    package_list+="net-snmp net-snmp-utils"
+    package_list+="net-snmp net-snmp-utils dmidecode"
     package_list+=" ";
     ## putty 
     package_list+="cpan gtk2-devel";
