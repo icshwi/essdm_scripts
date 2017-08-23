@@ -1,7 +1,7 @@
 #!/bin/bash
 #
-#  Copyright (c) 2016 Jeong Han Lee
-#  Copyright (c) 2016 European Spallation Source ERIC
+#  Copyright (c) 2016 - Present Jeong Han Lee
+#  Copyright (c) 2016 - Present European Spallation Source ERIC
 #
 #  The program is free software: you can redistribute
 #  it and/or modify it under the terms of the GNU General Public License
@@ -18,8 +18,8 @@
 #
 # Author : Jeong Han Lee
 # email  : han.lee@esss.se
-# Date   : Wednesday, February  1 13:17:39 CET 2017
-# version : 0.0.2
+# Date   : Wednesday, August 23 09:12:26 CEST 2017
+# version : 0.0.3
 #
 
 declare -gr SC_SCRIPT="$(realpath "$0")"
@@ -238,7 +238,8 @@ function update_css_configuration() {
 
 
 declare -gr CSS_TOP="/opt";
-declare -gr CSS_VERSION="4.4.1.3";
+#declare -gr CSS_VERSION="4.4.1.3";
+declare -gr CSS_VERSION="4.5.0.2";
 declare -gr CSS_GENERIC_NAME="cs-studio";
 declare -gr CSS_GENERIC_DIR=${CSS_TOP}/${CSS_GENERIC_NAME};
 #declare -gr CSS_DIR=${CSS_GENERIC_DIR}-${CSS_VERSION}
