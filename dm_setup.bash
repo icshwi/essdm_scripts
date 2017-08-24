@@ -19,8 +19,8 @@
 # Shell  : dm_setup.bash
 # Author : Jeong Han Lee
 # email  : han.lee@esss.se
-# Date   : 
-# version : 0.9.8
+# Date   : Thursday, August 24 17:18:01 CEST 2017
+# version : 0.9.9
 #
 # http://www.gnu.org/software/bash/manual/bashref.html#Bash-Builtins
 
@@ -372,6 +372,9 @@ function yum_extra(){
     package_list+=" ";
     ## ipmi
     package_list+="ipmitool OpenIPMI";
+    package_list+=" ";
+    ## ethercat kernel module
+    package_list+="autoconf automake";
     package_list+=" ";
     
     ${SUDO_CMD} yum -y install ${package_list}; 

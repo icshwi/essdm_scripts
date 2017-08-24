@@ -47,45 +47,6 @@ function __checkstr() {
     fi
 }
 
-# Generic : git_clone
-# 1.0.3 Tuesday, November  8 18:13:44 CET 2016
-#
-# Required Global Variable
-# - SC_LOGDATE      : Input
-
-function git_clone() {
-    
-    local func_name=${FUNCNAME[*]}; __ini_func ${func_name};
-    
-    local git_src_dir=$1;
-    local git_src_url=$2;
-    local git_src_name=$3;
-    local tag_name=$4;
-    
-    __checkstr ${SC_LOGDATE};
-    
-    if [[ ! -d ${git_src_dir} ]]; then
-	printf "No git source repository in the expected location %s\n" "${git_src_dir}";
-    else
-	printf "Old git source repository in the expected location %s\n" "${git_src_dir}";
-	printf "The old one is renamed to %s_%s\n" "${git_src_dir}" "${SC_LOGDATE}";
-	mv  ${git_src_dir} ${git_src_dir}_${SC_LOGDATE}
-    fi
-    
-    # Always fresh cloning ..... in order to workaround any local 
-    # modification in the repository, which was cloned before. 
-    #
-    # we need the recursive option in order to build a web based viewer for Archappl
-    if [ -z "$tag_name" ]; then
-	git clone --recursive "${git_src_url}/${git_src_name}" "${git_src_dir}";
-    else
-	git clone --recursive -b "${tag_name}" --single-branch --depth 1 "${git_src_url}/${git_src_name}" "${git_src_dir}";
-    fi
-
-    __end_func ${func_name};
-}
-
-
 function download_css() {
 
     local func_name=${FUNCNAME[*]}; __ini_func ${func_name};
