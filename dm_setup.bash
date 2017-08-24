@@ -374,7 +374,7 @@ function yum_extra(){
     package_list+="ipmitool OpenIPMI";
     package_list+=" ";
     ## ethercat kernel module
-    package_list+="autoconf automake";
+    package_list+="autoconf automake libtool";
     package_list+=" ";
     
     ${SUDO_CMD} yum -y install ${package_list}; 
