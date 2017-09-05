@@ -40,7 +40,7 @@ $ curl -L https://git.io/vi8DA -o dm_setup.bash
 $ bash dm_setup.bash loc
 ```
 
-* Setup CSS 4.4.1.2
+* Setup CSS 4.5.1.0 (Oracle JAVA is required)
 ```
 $ curl -L https://git.io/vMyeU -o css_setup.bash
 $ bash css_setup.bash
