@@ -18,8 +18,8 @@
 #
 # Author : Jeong Han Lee
 # email  : han.lee@esss.se
-# Date   : Wednesday, August 23 09:12:26 CEST 2017
-# version : 0.0.3
+# Date   : Monday, August 28 13:58:37 CEST 2017
+# version : 0.0.4
 #
 
 declare -gr SC_SCRIPT="$(realpath "$0")"
@@ -199,8 +199,8 @@ function update_css_configuration() {
 
 
 declare -gr CSS_TOP="/opt";
-#declare -gr CSS_VERSION="4.4.1.3";
-declare -gr CSS_VERSION="4.5.0.2";
+declare -gr CSS_VERSION="4.5.1.0";
+#declare -gr CSS_VERSION="4.5.0.2";
 declare -gr CSS_GENERIC_NAME="cs-studio";
 declare -gr CSS_GENERIC_DIR=${CSS_TOP}/${CSS_GENERIC_NAME};
 #declare -gr CSS_DIR=${CSS_GENERIC_DIR}-${CSS_VERSION}
