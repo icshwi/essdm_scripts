@@ -1,5 +1,5 @@
 
-# Don't use this repo in order to duplicate DM
+# Don't use this repo
 
 essdm_scripts (Archived)
 ======
